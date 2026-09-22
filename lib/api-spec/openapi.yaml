@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: journal
+    description: Daily journal and routine tracking
+  - name: routines
+    description: Routine checklist management
 paths:
   /healthz:
     get:
@@ -24,7 +28,235 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /daily:
+    get:
+      operationId: getDaily
+      tags: [journal]
+      summary: Get a complete day
+      parameters:
+        - $ref: "#/components/parameters/Date"
+      responses:
+        "200":
+          description: Day data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyData"
+  /entries/{date}:
+    put:
+      operationId: upsertEntry
+      tags: [journal]
+      summary: Save a journal entry
+      parameters:
+        - $ref: "#/components/parameters/DatePath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EntryInput"
+      responses:
+        "200":
+          description: Saved journal entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Entry"
+  /entries/{date}/routine/{routineItemId}:
+    put:
+      operationId: setRoutineCompletion
+      tags: [journal]
+      summary: Set routine completion for a day
+      parameters:
+        - $ref: "#/components/parameters/DatePath"
+        - name: routineItemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoutineCompletionInput"
+      responses:
+        "200":
+          description: Saved completion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutineCompletion"
+  /weeks/{weekStartDate}:
+    get:
+      operationId: getWeek
+      tags: [journal]
+      summary: Get a Monday-to-Sunday week
+      parameters:
+        - $ref: "#/components/parameters/WeekStartDate"
+      responses:
+        "200":
+          description: Week data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeekData"
+  /weeks/{weekStartDate}/reflection:
+    put:
+      operationId: upsertWeeklyReflection
+      tags: [journal]
+      summary: Save a weekly reflection
+      parameters:
+        - $ref: "#/components/parameters/WeekStartDate"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WeeklyReflectionInput"
+      responses:
+        "200":
+          description: Saved reflection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeeklyReflection"
+  /months/{year}/{month}:
+    get:
+      operationId: getMonth
+      tags: [journal]
+      summary: Get month calendar and stats
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: month
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+      responses:
+        "200":
+          description: Month data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonthData"
+  /routine-items:
+    get:
+      operationId: listRoutineItems
+      tags: [routines]
+      summary: List active and inactive routine items
+      responses:
+        "200":
+          description: Routine items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RoutineItem"
+    post:
+      operationId: createRoutineItem
+      tags: [routines]
+      summary: Create a routine item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoutineItemInput"
+      responses:
+        "201":
+          description: Created routine item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutineItem"
+  /routine-items/{id}:
+    patch:
+      operationId: updateRoutineItem
+      tags: [routines]
+      summary: Update a routine item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoutineItemUpdate"
+      responses:
+        "200":
+          description: Updated routine item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutineItem"
+    delete:
+      operationId: deleteRoutineItem
+      tags: [routines]
+      summary: Deactivate a routine item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Routine item deactivated
+  /routine-items/reorder:
+    put:
+      operationId: reorderRoutineItems
+      tags: [routines]
+      summary: Reorder routine items
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderRoutineItemsInput"
+      responses:
+        "200":
+          description: Reordered routine items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RoutineItem"
 components:
+  parameters:
+    Date:
+      name: date
+      in: query
+      required: true
+      schema:
+        type: string
+        pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    DatePath:
+      name: date
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    WeekStartDate:
+      name: weekStartDate
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +265,206 @@ components:
           type: string
       required:
         - status
+    Entry:
+      type: object
+      properties:
+        date:
+          type: string
+        journalText:
+          type: string
+        moodRating:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 5
+        topPriorities:
+          type: array
+          maxItems: 3
+          items:
+            type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [date, journalText, moodRating, topPriorities, createdAt, updatedAt]
+    EntryInput:
+      type: object
+      properties:
+        journalText:
+          type: string
+        moodRating:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 5
+        topPriorities:
+          type: array
+          maxItems: 3
+          items:
+            type: string
+      required: [journalText, moodRating, topPriorities]
+    RoutineItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+      required: [id, name, isActive, sortOrder]
+    RoutineItemInput:
+      type: object
+      properties:
+        name:
+          type: string
+      required: [name]
+    RoutineItemUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+    RoutineCompletion:
+      type: object
+      properties:
+        date:
+          type: string
+        routineItemId:
+          type: integer
+        completed:
+          type: boolean
+      required: [date, routineItemId, completed]
+    RoutineCompletionInput:
+      type: object
+      properties:
+        completed:
+          type: boolean
+      required: [completed]
+    DailyData:
+      type: object
+      properties:
+        date:
+          type: string
+        entry:
+          allOf:
+            - $ref: "#/components/schemas/Entry"
+          nullable: true
+        routines:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoutineDayItem"
+        previousEntrySnippet:
+          type: string
+          nullable: true
+      required: [date, entry, routines, previousEntrySnippet]
+    RoutineDayItem:
+      allOf:
+        - $ref: "#/components/schemas/RoutineItem"
+        - type: object
+          properties:
+            completed:
+              type: boolean
+          required: [completed]
+    WeekData:
+      type: object
+      properties:
+        weekStartDate:
+          type: string
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeekDay"
+        reflection:
+          allOf:
+            - $ref: "#/components/schemas/WeeklyReflection"
+          nullable: true
+      required: [weekStartDate, days, reflection]
+    WeekDay:
+      type: object
+      properties:
+        date:
+          type: string
+        dayName:
+          type: string
+        routineCompletionPercent:
+          type: number
+        moodRating:
+          type: integer
+          nullable: true
+        priorityCount:
+          type: integer
+        journalSnippet:
+          type: string
+      required: [date, dayName, routineCompletionPercent, moodRating, priorityCount, journalSnippet]
+    WeeklyReflection:
+      type: object
+      properties:
+        weekStartDate:
+          type: string
+        wentWell:
+          type: string
+        improve:
+          type: string
+      required: [weekStartDate, wentWell, improve]
+    WeeklyReflectionInput:
+      type: object
+      properties:
+        wentWell:
+          type: string
+        improve:
+          type: string
+      required: [wentWell, improve]
+    MonthData:
+      type: object
+      properties:
+        year:
+          type: integer
+        month:
+          type: integer
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/MonthDay"
+        stats:
+          $ref: "#/components/schemas/MonthStats"
+      required: [year, month, days, stats]
+    MonthDay:
+      type: object
+      properties:
+        date:
+          type: string
+        moodRating:
+          type: integer
+          nullable: true
+        routineCompletionPercent:
+          type: number
+        hasEntry:
+          type: boolean
+      required: [date, moodRating, routineCompletionPercent, hasEntry]
+    MonthStats:
+      type: object
+      properties:
+        averageMood:
+          type: number
+        averageRoutineCompletion:
+          type: number
+        currentStreak:
+          type: integer
+        mostProductiveDay:
+          type: string
+      required: [averageMood, averageRoutineCompletion, currentStreak, mostProductiveDay]
+    ReorderRoutineItemsInput:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+      required: [ids]
 

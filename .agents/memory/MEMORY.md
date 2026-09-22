@@ -1,0 +1,2 @@
+- [Generated client types](generated-client-types.md) — keep iterable DOM typings enabled for Orval fetch helpers.
+- [Expo package installs](expo-package-install.md) — install native Expo packages from the mobile artifact directory, not workspace root.

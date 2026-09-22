@@ -1,0 +1,59 @@
+Build a full-stack MOBILE APPLICATION (built with React Native + Expo, NOT a website) called "Daily Log" — a fully-dated personal diary and routine tracker with Day, Week, and Month views, designed for phone screens (portrait orientation, touch-friendly).
+
+TECH STACK
+- Frontend: React Native with Expo (so it can be tested via Expo Go app and eventually built as an APK/IPA)
+- Navigation: React Navigation (bottom tab navigator for Day / Week / Month / Settings)
+- Backend: Node.js + Express (REST API)
+- Database: PostgreSQL (use Replit's built-in database) for persistent storage — do NOT use in-memory storage, since data must survive server restarts
+- Single user, no login/authentication required — this is a private personal tool
+- The mobile app communicates with the backend via API calls (fetch/axios) over HTTP
+
+DATA MODEL
+1. entries table: date (TEXT, primary key, format YYYY-MM-DD), journal_text (TEXT), mood_rating (INTEGER 1-5), top_priorities (JSON array of up to 3 strings), created_at, updated_at
+2. routine_items table: id (serial), name (TEXT), is_active (BOOLEAN), sort_order (INTEGER)
+3. routine_completions table: date (TEXT), routine_item_id (INTEGER), completed (BOOLEAN) — composite key on (date, routine_item_id)
+4. weekly_reflections table: week_start_date (TEXT, primary key), went_well (TEXT), improve (TEXT)
+
+BOTTOM TAB NAVIGATION
+Four tabs with icons: "Day" | "Week" | "Month" | "Settings"
+
+DAY SCREEN (default tab)
+- Date navigator at top: left/right arrow buttons to move to previous/next day, a calendar icon to jump to any specific date via a native date picker, and a "Today" button
+- Large multi-line journal/diary text input, auto-saves on change with 1-second debounce, shows a small "Saved" checkmark
+- Daily routine checklist: active routine_items rendered as tappable checkbox rows; tapping instantly saves completion status for that date
+- A "Manage Routine Items" button opening a modal/screen to add, rename, deactivate, or reorder routine checklist items
+- Mood/energy rating as 5 tappable star or emoji icons
+- "Top 3 Priorities" section with exactly 3 short text input fields
+- At the bottom, a collapsed preview of the previous day's journal entry (first 100 characters) with a "View" link to navigate there
+
+WEEK SCREEN
+- Week navigator: left/right arrows to move between weeks, always aligned Monday–Sunday
+- Vertically scrollable list of 7 day-cards (not a horizontal grid, since it's a phone screen), each showing: day name + date, routine completion %, mood emoji/color, number of priorities set, and a short journal snippet
+- Tapping any day-card navigates to the Day screen for that date
+- Below the list: "Weekly Reflection" section with two text inputs — "What went well this week" and "What could improve" — saved to weekly_reflections keyed by that week's Monday date
+
+MONTH SCREEN
+- Month navigator: left/right arrows to move between months
+- Full calendar grid sized for mobile (compact date cells, Monday start), each date color-coded by mood_rating (green=4-5, yellow=3, red=1-2, gray=no entry) with a small dot/ring indicator for routine completion %
+- Tapping a date cell navigates to the Day screen for that date
+- A stats card above or below the calendar showing: average mood this month, average routine completion %, current streak (consecutive days with an entry), and most productive day of the week
+
+SETTINGS SCREEN
+- Manage routine checklist items: add, edit, delete, reorder (drag-and-drop or up/down buttons)
+- Dark mode toggle (persisted setting)
+- App info/version footer
+
+DESIGN
+- Clean, minimal, distraction-free UI suited for a phone: soft neutral colors, generous padding, readable sans-serif typography (e.g., Inter or system default), subtle shadows/borders
+- Touch targets sized appropriately for fingers (minimum 44x44 px)
+- Support both light and dark mode
+- Smooth transitions between tabs/screens
+
+FUNCTIONAL REQUIREMENTS
+- Every save persists immediately to PostgreSQL via the backend API — no data loss on app close/reopen
+- Set up database schema/migrations automatically when the backend first runs
+- Include basic error handling (e.g., failed save shows a small toast/alert on screen)
+- Seed the routine_items table with 4-5 sensible defaults on first run (e.g., "Exercise", "8 hours sleep", "Deep work block", "No phone before bed", "Read 20 minutes")
+- Provide a working setup so the Expo app can be run and previewed via Expo Go (QR code) directly from Replit, alongside the backend server running simultaneously
+
+Build this end-to-end as a fully working mobile app with backend, ready to preview on a phone via Expo Go.
