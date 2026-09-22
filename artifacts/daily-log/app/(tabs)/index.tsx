@@ -18,7 +18,14 @@ export default function TodayScreen() {
   const [date, setDate] = useState(iso(new Date()));
   const [showDatePicker, setShowDatePicker] = useState(false);
   const params = useMemo(() => ({ date }), [date]);
-  const daily = useGetDaily(params, { query: { queryKey: getGetDailyQueryKey(params) } });
+  const daily = useGetDaily(params, {
+    query: {
+      queryKey: getGetDailyQueryKey(params),
+      retry: 5,
+      retryDelay: (attempt) => Math.min(800 * (attempt + 1), 4000),
+      refetchOnMount: 'always',
+    },
+  });
   const saveEntry = useUpsertEntry();
   const setCompletion = useSetRoutineCompletion();
   const [journalText, setJournalText] = useState('');
