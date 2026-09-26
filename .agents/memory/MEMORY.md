@@ -2,3 +2,4 @@
 - [Expo package installs](expo-package-install.md) — install native Expo packages from the mobile artifact directory, not workspace root.
 - [Expo DevTools GLib warning](expo-devtools-glib.md) — missing libglib can affect optional DevTools without preventing Metro or the app from running.
 - [Appearance API web compatibility](appearance-web-compat.md) — guard native color-scheme updates because React Native Web lacks `Appearance.setColorScheme`.
+- [Mobile API reachability](mobile-api-reachability.md) — Expo Go development bundles should use the same public Expo host as the device preview.

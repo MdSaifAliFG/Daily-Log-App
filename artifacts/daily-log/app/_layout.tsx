@@ -23,8 +23,8 @@ setBaseUrl(`https://${process.env.EXPO_PUBLIC_DOMAIN}`);
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 5,
-      retryDelay: (attempt) => Math.min(800 * (attempt + 1), 4000),
+      retry: 2,
+      retryDelay: (attempt) => Math.min(800 * (attempt + 1), 2500),
       refetchOnReconnect: true,
     },
   },

@@ -22,8 +22,8 @@ export default function TodayScreen() {
   const daily = useGetDaily(params, {
     query: {
       queryKey: getGetDailyQueryKey(params),
-      retry: 5,
-      retryDelay: (attempt) => Math.min(800 * (attempt + 1), 4000),
+      retry: 2,
+      retryDelay: (attempt) => Math.min(800 * (attempt + 1), 2500),
       refetchOnMount: 'always',
     },
   });
