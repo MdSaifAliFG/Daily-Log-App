@@ -47,7 +47,17 @@ const emptyEntry = (date: string) => ({
 });
 
 function assertDate(value: string) {
-  if (!datePattern.test(value) || Number.isNaN(new Date(`${value}T00:00:00Z`).getTime())) {
+  if (!datePattern.test(value)) {
+    throw new Error("Invalid date");
+  }
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (
+    Number.isNaN(parsed.getTime()) ||
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
     throw new Error("Invalid date");
   }
 }
@@ -385,6 +395,11 @@ router.get("/routine-items", async (req, res) => {
 router.post("/routine-items", async (req, res) => {
   try {
     const body = CreateRoutineItemBody.parse(req.body);
+    const name = body.name.trim();
+    if (!name) {
+      res.status(400).json({ message: "Routine name is required." });
+      return;
+    }
     const [last] = await db
       .select({ sortOrder: routineItemsTable.sortOrder })
       .from(routineItemsTable)
@@ -392,7 +407,7 @@ router.post("/routine-items", async (req, res) => {
       .limit(1);
     const [item] = await db
       .insert(routineItemsTable)
-      .values({ name: body.name.trim(), sortOrder: (last?.sortOrder ?? -1) + 1 })
+      .values({ name, sortOrder: (last?.sortOrder ?? -1) + 1 })
       .returning();
     res.status(201).json(CreateRoutineItemResponse.parse(item));
   } catch (error) {
@@ -405,9 +420,13 @@ router.patch("/routine-items/:id", async (req, res) => {
   try {
     const params = UpdateRoutineItemParams.parse({ id: Number(req.params.id) });
     const body = UpdateRoutineItemBody.parse(req.body);
+    if (body.name !== undefined && !body.name.trim()) {
+      res.status(400).json({ message: "Routine name is required." });
+      return;
+    }
     const [item] = await db
       .update(routineItemsTable)
-      .set(body)
+      .set({ ...body, ...(body.name !== undefined ? { name: body.name.trim() } : {}) })
       .where(eq(routineItemsTable.id, params.id))
       .returning();
     if (!item) {
@@ -424,6 +443,15 @@ router.patch("/routine-items/:id", async (req, res) => {
 router.delete("/routine-items/:id", async (req, res) => {
   try {
     const params = DeleteRoutineItemParams.parse({ id: Number(req.params.id) });
+    const [item] = await db
+      .select({ id: routineItemsTable.id })
+      .from(routineItemsTable)
+      .where(eq(routineItemsTable.id, params.id))
+      .limit(1);
+    if (!item) {
+      res.status(404).json({ message: "Routine not found." });
+      return;
+    }
     await db
       .update(routineItemsTable)
       .set({ isActive: false })

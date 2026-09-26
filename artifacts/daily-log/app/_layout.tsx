@@ -20,7 +20,15 @@ import { AppearanceProvider } from '@/contexts/AppearanceContext';
 SplashScreen.preventAutoHideAsync();
 setBaseUrl(`https://${process.env.EXPO_PUBLIC_DOMAIN}`);
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 5,
+      retryDelay: (attempt) => Math.min(800 * (attempt + 1), 4000),
+      refetchOnReconnect: true,
+    },
+  },
+});
 
 function RootLayoutNav() {
   return (

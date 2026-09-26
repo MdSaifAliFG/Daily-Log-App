@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useCreateRoutineItem, useDeleteRoutineItem, useListRoutineItems, useReorderRoutineItems, useUpdateRoutineItem, getListRoutineItemsQueryKey } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
 import { Button, Card, ErrorState, Field, IconButton, LoadingState, Page, styles as ui } from '@/components/AppUI';
+import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 
 export default function RoutineScreen() {
   const colors = useColors();
@@ -34,6 +35,13 @@ export default function RoutineScreen() {
     update.mutate({ id, data: { name: value } }, { onSuccess: invalidate });
   };
   const deactivate = (id: number, itemName: string) => Alert.alert('Pause this ritual?', `${itemName} will stay in your history but stop appearing on new days.`, [{ text: 'Keep it', style: 'cancel' }, { text: 'Pause', style: 'destructive', onPress: () => remove.mutate({ id }, { onSuccess: invalidate }) }]);
+  const toggleActive = (id: number, item: { name: string; isActive: boolean }) => {
+    if (item.isActive) {
+      deactivate(id, item.name);
+      return;
+    }
+    update.mutate({ id, data: { isActive: true } }, { onSuccess: invalidate });
+  };
   const move = (index: number, direction: -1 | 1) => {
     const next = [...items];
     const target = index + direction;
@@ -43,7 +51,7 @@ export default function RoutineScreen() {
   };
 
   return <Page>
-    <ScrollView showsVerticalScrollIndicator={false}>
+    <KeyboardAwareScrollViewCompat showsVerticalScrollIndicator={false}>
       <View style={local.header}><IconButton icon="x" label="Close routine settings" onPress={() => router.back()} /><View style={local.headerCopy}><Text style={[ui.eyebrow, { color: colors.primary }]}>Your daily anchors</Text><Text style={[local.title, { color: colors.foreground }]}>Routines</Text></View><View style={{ width: 46 }} /></View>
       <Text style={[ui.muted, { color: colors.mutedForeground, marginBottom: 18 }]}>Keep the list small enough to feel like care, not homework.</Text>
       <Card>
@@ -52,8 +60,8 @@ export default function RoutineScreen() {
         {create.isError ? <Text style={[ui.muted, { color: colors.destructive }]}>Couldn’t add that one. Try again.</Text> : null}
       </Card>
       <View style={local.listHeading}><Text style={[ui.eyebrow, { color: colors.primary }]}>In order</Text><Text style={[ui.muted, { color: colors.mutedForeground }]}>{items.filter((item) => item.isActive).length} active</Text></View>
-      {items.length === 0 ? <Card><View style={local.empty}><Feather name="list" size={25} color={colors.primary} /><Text style={[local.emptyTitle, { color: colors.foreground }]}>Nothing here yet</Text><Text style={[ui.muted, { color: colors.mutedForeground, textAlign: 'center' }]}>Start with one small action you’d like to return to.</Text></View></Card> : items.map((item, index) => <Card key={item.id} style={[local.item, !item.isActive && { opacity: 0.55 }]}><View style={local.itemTop}><View style={[local.grip, { backgroundColor: colors.secondary }]}><Feather name="menu" size={18} color={colors.mutedForeground} /></View><View style={ui.flex}><Text style={[local.itemName, { color: colors.foreground }]}>{item.name}</Text><Text style={[ui.muted, { color: item.isActive ? colors.primary : colors.mutedForeground }]}>{item.isActive ? 'Appears on each new day' : 'Paused'}</Text></View><View style={local.move}><IconButton icon="chevron-up" label={`Move ${item.name} up`} onPress={() => move(index, -1)} tint={index === 0 ? colors.border : colors.foreground} /><IconButton icon="chevron-down" label={`Move ${item.name} down`} onPress={() => move(index, 1)} tint={index === items.length - 1 ? colors.border : colors.foreground} /></View></View><View style={[local.renameRow, { borderTopColor: colors.border }]}><View style={ui.flex}><Field value={editing[item.id] ?? item.name} onChangeText={(value) => setEditing((current) => ({ ...current, [item.id]: value }))} placeholder="Routine name" /></View><IconButton icon="check" label={`Save ${item.name}`} onPress={() => rename(item.id)} tint={colors.primary} /><IconButton icon="pause-circle" label={`Pause ${item.name}`} onPress={() => deactivate(item.id, item.name)} tint={colors.destructive} /></View></Card>)}
-    </ScrollView>
+       {items.length === 0 ? <Card><View style={local.empty}><Feather name="list" size={25} color={colors.primary} /><Text style={[local.emptyTitle, { color: colors.foreground }]}>Nothing here yet</Text><Text style={[ui.muted, { color: colors.mutedForeground, textAlign: 'center' }]}>Start with one small action you’d like to return to.</Text></View></Card> : items.map((item, index) => <Card key={item.id} style={[local.item, !item.isActive && { opacity: 0.55 }]}><View style={local.itemTop}><View style={[local.grip, { backgroundColor: colors.secondary }]}><Feather name="menu" size={18} color={colors.mutedForeground} /></View><View style={ui.flex}><Text style={[local.itemName, { color: colors.foreground }]}>{item.name}</Text><Text style={[ui.muted, { color: item.isActive ? colors.primary : colors.mutedForeground }]}>{item.isActive ? 'Appears on each new day' : 'Paused'}</Text></View><View style={local.move}><IconButton icon="chevron-up" label={`Move ${item.name} up`} onPress={() => move(index, -1)} tint={index === 0 ? colors.border : colors.foreground} /><IconButton icon="chevron-down" label={`Move ${item.name} down`} onPress={() => move(index, 1)} tint={index === items.length - 1 ? colors.border : colors.foreground} /></View></View><View style={[local.renameRow, { borderTopColor: colors.border }]}><View style={ui.flex}><Field value={editing[item.id] ?? item.name} onChangeText={(value) => setEditing((current) => ({ ...current, [item.id]: value }))} placeholder="Routine name" /></View><IconButton icon="check" label={`Save ${item.name}`} onPress={() => rename(item.id)} tint={colors.primary} /><IconButton icon={item.isActive ? 'pause-circle' : 'play-circle'} label={item.isActive ? `Pause ${item.name}` : `Resume ${item.name}`} onPress={() => toggleActive(item.id, item)} tint={item.isActive ? colors.destructive : colors.primary} /></View></Card>)}
+     </KeyboardAwareScrollViewCompat>
   </Page>;
 }
 

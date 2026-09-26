@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useQueryClient } from '@tanstack/react-query';
@@ -8,6 +8,7 @@ import { useGetDaily, useSetRoutineCompletion, useUpsertEntry, getGetDailyQueryK
 import { useColors } from '@/hooks/useColors';
 import * as Haptics from 'expo-haptics';
 import { Button, Card, ErrorState, Field, IconButton, LoadingState, Page, SectionTitle, styles as ui } from '@/components/AppUI';
+import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { displayDate, iso, parseIso, shiftDays } from '@/lib/date';
 
 export default function TodayScreen() {
@@ -65,6 +66,13 @@ export default function TodayScreen() {
     });
   };
 
+  const changeDate = (nextDate: string) => {
+    if (dirty.current && loadedDate.current === date) {
+      save();
+    }
+    setDate(nextDate);
+  };
+
   useEffect(() => {
     if (loadedDate.current !== date || !daily.data || !dirty.current) return;
     const timeout = setTimeout(() => save(), 1000);
@@ -86,7 +94,7 @@ export default function TodayScreen() {
   const isToday = date === iso(new Date());
 
   return <Page>
-    <ScrollView showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={daily.isRefetching} onRefresh={() => daily.refetch()} tintColor={colors.primary} />}>
+     <KeyboardAwareScrollViewCompat showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={daily.isRefetching} onRefresh={() => daily.refetch()} tintColor={colors.primary} />}>
       <View style={local.header}>
         <View>
           <Text style={[ui.eyebrow, { color: colors.primary }]}>{isToday ? 'Your quiet corner' : 'Looking back'}</Text>
@@ -95,16 +103,16 @@ export default function TodayScreen() {
         <IconButton icon="settings" label="Open settings" onPress={() => router.push('/settings')} />
       </View>
       <View style={local.dateNav}>
-        <IconButton icon="chevron-left" label="Previous day" onPress={() => setDate((value) => shiftDays(value, -1))} />
+        <IconButton icon="chevron-left" label="Previous day" onPress={() => changeDate(shiftDays(date, -1))} />
         <IconButton icon="calendar" label="Choose a date" onPress={() => setShowDatePicker(true)} tint={colors.primary} />
-        <Button title={isToday ? 'Today' : 'Back to today'} onPress={() => setDate(iso(new Date()))} secondary />
-        <IconButton icon="chevron-right" label="Next day" onPress={() => setDate((value) => shiftDays(value, 1))} />
+        <Button title={isToday ? 'Today' : 'Back to today'} onPress={() => changeDate(iso(new Date()))} secondary />
+        <IconButton icon="chevron-right" label="Next day" onPress={() => changeDate(shiftDays(date, 1))} />
       </View>
       {showDatePicker && Platform.OS !== 'web' ? <Modal transparent animationType="fade" visible onRequestClose={() => setShowDatePicker(false)}>
         <View style={local.pickerBackdrop}>
           <View style={[local.pickerCard, { backgroundColor: colors.card }]}>
             <Text style={[ui.eyebrow, { color: colors.primary }]}>Choose a day</Text>
-            <DateTimePicker value={parseIso(date)} mode="date" display="spinner" onChange={(_, selected) => { if (selected) setDate(iso(selected)); }} />
+            <DateTimePicker value={parseIso(date)} mode="date" display="spinner" onChange={(_, selected) => { if (selected) changeDate(iso(selected)); }} />
             <Button title="Done" onPress={() => setShowDatePicker(false)} />
           </View>
         </View>
@@ -140,8 +148,8 @@ export default function TodayScreen() {
         {daily.data.routines.length === 0 ? <View style={local.emptyRow}><Feather name="sunrise" color={colors.primary} size={21} /><Text style={[ui.muted, { color: colors.mutedForeground }]}>Add a few rituals in Settings.</Text></View> : daily.data.routines.map((item) => <RoutineRow key={item.id} name={item.name} done={!!completed[item.id]} onPress={() => toggleRoutine(item.id)} colors={colors} />)}
       </Card>
 
-      {daily.data.previousEntrySnippet ? <Card style={{ backgroundColor: colors.secondary }}><Text style={[ui.eyebrow, { color: colors.primary }]}>From the last page</Text><Text style={[local.snippet, { color: colors.secondaryForeground }]}>“{daily.data.previousEntrySnippet}”</Text><Pressable onPress={() => setDate((value) => shiftDays(value, -1))}><Text style={[ui.muted, { color: colors.primary, marginTop: 10 }]}>View yesterday’s page</Text></Pressable></Card> : null}
-    </ScrollView>
+       {daily.data.previousEntrySnippet ? <Card style={{ backgroundColor: colors.secondary }}><Text style={[ui.eyebrow, { color: colors.primary }]}>From the last page</Text><Text style={[local.snippet, { color: colors.secondaryForeground }]}>“{daily.data.previousEntrySnippet}”</Text><Pressable onPress={() => changeDate(shiftDays(date, -1))}><Text style={[ui.muted, { color: colors.primary, marginTop: 10 }]}>View yesterday’s page</Text></Pressable></Card> : null}
+     </KeyboardAwareScrollViewCompat>
   </Page>;
 }
 

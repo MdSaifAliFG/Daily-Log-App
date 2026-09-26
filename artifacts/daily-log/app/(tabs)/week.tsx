@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useGetWeek, useUpsertWeeklyReflection, getGetWeekQueryKey } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
 import { Button, Card, ErrorState, Field, IconButton, LoadingState, Page, SectionTitle, styles as ui } from '@/components/AppUI';
+import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { iso, monthLabel, shortDate, shiftDays, startOfWeek } from '@/lib/date';
 
 export default function WeekScreen() {
@@ -44,7 +45,7 @@ export default function WeekScreen() {
   const average = query.data.days.length ? Math.round(query.data.days.reduce((sum, day) => sum + day.routineCompletionPercent, 0) / query.data.days.length) : 0;
 
   return <Page>
-    <ScrollView showsVerticalScrollIndicator={false}>
+     <KeyboardAwareScrollViewCompat showsVerticalScrollIndicator={false}>
       <SectionTitle eyebrow="A wider view" title="This week" right={<Feather name="sun" color={colors.primary} size={22} />} />
       <View style={local.nav}><IconButton icon="chevron-left" label="Previous week" onPress={() => setWeekStart((value) => shiftDays(value, -7))} /><View style={local.range}><Text style={[local.rangeText, { color: colors.foreground }]}>{rangeLabel}</Text><Text style={[ui.muted, { color: colors.mutedForeground }]}>{monthLabel(Number(weekStart.slice(0, 4)), Number(weekStart.slice(5, 7)))} </Text></View><IconButton icon="chevron-right" label="Next week" onPress={() => setWeekStart((value) => shiftDays(value, 7))} /></View>
       <Card style={{ backgroundColor: colors.secondary }}>
@@ -60,7 +61,7 @@ export default function WeekScreen() {
         <Field value={improve} onChangeText={setImprove} placeholder="One kind change for next week…" multiline />
         <View style={local.saveRow}><Text style={[ui.muted, { color: saved ? colors.primary : colors.mutedForeground }]}>{saved ? 'Reflection saved' : 'A note to your future self'}</Text><Button title={saveReflection.isPending ? 'Saving…' : 'Save reflection'} onPress={save} disabled={saveReflection.isPending} /></View>
       </Card>
-    </ScrollView>
+     </KeyboardAwareScrollViewCompat>
   </Page>;
 }
 
