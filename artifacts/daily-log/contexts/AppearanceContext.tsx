@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Appearance } from 'react-native';
+import { Appearance, Platform } from 'react-native';
 
 export type AppearanceMode = 'system' | 'light' | 'dark';
 
@@ -12,6 +12,12 @@ type AppearanceContextValue = {
 const AppearanceContext = createContext<AppearanceContextValue | null>(null);
 const STORAGE_KEY = '@daily-log/appearance';
 
+function applyNativeColorScheme(mode: AppearanceMode) {
+  if (Platform.OS !== 'web' && typeof Appearance.setColorScheme === 'function') {
+    Appearance.setColorScheme(mode === 'system' ? 'unspecified' : mode);
+  }
+}
+
 export function AppearanceProvider({ children }: { children: React.ReactNode }) {
   const [mode, setModeState] = useState<AppearanceMode>('system');
 
@@ -19,14 +25,14 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
     AsyncStorage.getItem(STORAGE_KEY).then((value) => {
       if (value === 'system' || value === 'light' || value === 'dark') {
         setModeState(value);
-        Appearance.setColorScheme(value === 'system' ? (null as never) : value);
+        applyNativeColorScheme(value);
       }
     });
   }, []);
 
   const setMode = (nextMode: AppearanceMode) => {
     setModeState(nextMode);
-    Appearance.setColorScheme(nextMode === 'system' ? (null as never) : nextMode);
+    applyNativeColorScheme(nextMode);
     void AsyncStorage.setItem(STORAGE_KEY, nextMode);
   };
 
