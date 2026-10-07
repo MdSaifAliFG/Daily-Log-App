@@ -2,13 +2,13 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { initializeDatabase } from "./lib/init-db";
 
-const rawPort = process.env["PORT"];
-
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
+if (typeof process.loadEnvFile === "function") {
+  try {
+    process.loadEnvFile();
+  } catch {}
 }
+
+const rawPort = process.env["PORT"] || "5000";
 
 const port = Number(rawPort);
 

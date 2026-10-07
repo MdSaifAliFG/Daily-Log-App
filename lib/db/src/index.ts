@@ -4,6 +4,15 @@ import * as schema from "./schema";
 
 const { Pool } = pg;
 
+if (!process.env.DATABASE_URL && typeof process.loadEnvFile === "function") {
+  try {
+    process.loadEnvFile();
+  } catch {}
+  try {
+    process.loadEnvFile(new URL("../../../.env", import.meta.url));
+  } catch {}
+}
+
 if (!process.env.DATABASE_URL) {
   throw new Error(
     "DATABASE_URL must be set. Did you forget to provision a database?",
