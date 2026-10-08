@@ -21,6 +21,10 @@ function NativeTabLayout() {
         />
         <NativeTabs.Trigger.Label>Today</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="notes">
+        <NativeTabs.Trigger.Icon sf={{ default: 'square.and.pencil', selected: 'square.and.pencil' }} />
+        <NativeTabs.Trigger.Label>Notes</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="week">
         <NativeTabs.Trigger.Icon sf={{ default: 'calendar', selected: 'calendar' }} />
         <NativeTabs.Trigger.Label>Week</NativeTabs.Trigger.Label>
@@ -84,6 +88,18 @@ function ClassicTabLayout() {
               <SymbolView name="house" tintColor={color} size={24} />
             ) : (
               <Feather name="home" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="notes"
+        options={{
+          title: 'Notes',
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="square.and.pencil" tintColor={color} size={24} />
+            ) : (
+              <Feather name="file-text" size={22} color={color} />
             ),
         }}
       />

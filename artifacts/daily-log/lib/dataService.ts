@@ -563,3 +563,174 @@ export async function deleteRoutineItem(id: number, userId?: string | null): Pro
     } catch {}
   }
 }
+
+// ---------------------------------------------------------------------------
+// 7. Daily Notes Management (Searchable, Taggable, Pinned)
+// ---------------------------------------------------------------------------
+export interface DailyNote {
+  id: string;
+  title: string;
+  content: string;
+  date: string; // YYYY-MM-DD
+  category: string; // 'General' | 'Idea' | 'Personal' | 'Work'
+  isPinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const LOCAL_NOTES_KEY = '@daily-log/daily-notes';
+
+export async function fetchDailyNotes(userId?: string | null): Promise<DailyNote[]> {
+  if (isSupabaseConfigured() && userId) {
+    try {
+      const supabase = getSupabase();
+      const { data, error } = await supabase
+        .from('daily_notes')
+        .select('*')
+        .eq('user_id', userId)
+        .order('is_pinned', { ascending: false })
+        .order('updated_at', { ascending: false });
+
+      if (data && !error) {
+        const mapped: DailyNote[] = data.map((n) => ({
+          id: n.id,
+          title: n.title,
+          content: n.content,
+          date: n.date,
+          category: n.category || 'General',
+          isPinned: !!n.is_pinned,
+          createdAt: n.created_at,
+          updatedAt: n.updated_at,
+        }));
+        await AsyncStorage.setItem(LOCAL_NOTES_KEY, JSON.stringify(mapped));
+        return mapped;
+      }
+    } catch (err) {
+      console.warn('Failed to fetch daily notes from Supabase, falling back to local storage', err);
+    }
+  }
+
+  try {
+    const raw = await AsyncStorage.getItem(LOCAL_NOTES_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [];
+}
+
+export async function saveDailyNote(
+  noteData: {
+    id?: string;
+    title: string;
+    content: string;
+    date?: string;
+    category?: string;
+    isPinned?: boolean;
+  },
+  userId?: string | null
+): Promise<DailyNote> {
+  const currentNotes = await fetchDailyNotes(userId);
+  const now = new Date().toISOString();
+  const todayStr = iso(new Date());
+
+  const noteId = noteData.id || `local_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const existing = currentNotes.find((n) => n.id === noteId);
+
+  const updatedNote: DailyNote = {
+    id: noteId,
+    title: noteData.title.trim(),
+    content: noteData.content.trim(),
+    date: noteData.date || existing?.date || todayStr,
+    category: noteData.category || existing?.category || 'General',
+    isPinned: noteData.isPinned !== undefined ? noteData.isPinned : existing?.isPinned ?? false,
+    createdAt: existing?.createdAt || now,
+    updatedAt: now,
+  };
+
+  const nextList = existing
+    ? currentNotes.map((n) => (n.id === noteId ? updatedNote : n))
+    : [updatedNote, ...currentNotes];
+
+  await AsyncStorage.setItem(LOCAL_NOTES_KEY, JSON.stringify(nextList));
+
+  if (isSupabaseConfigured() && userId) {
+    try {
+      const supabase = getSupabase();
+      const payload: any = {
+        user_id: userId,
+        title: updatedNote.title,
+        content: updatedNote.content,
+        date: updatedNote.date,
+        category: updatedNote.category,
+        is_pinned: updatedNote.isPinned,
+        updated_at: now,
+      };
+
+      if (noteData.id && !noteData.id.startsWith('local_')) {
+        payload.id = noteData.id;
+      }
+
+      const { data, error } = await supabase
+        .from('daily_notes')
+        .upsert(payload)
+        .select()
+        .single();
+
+      if (data && !error) {
+        const syncedNote: DailyNote = {
+          id: data.id,
+          title: data.title,
+          content: data.content,
+          date: data.date,
+          category: data.category,
+          isPinned: !!data.is_pinned,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+        const finalNotes = nextList.map((n) => (n.id === noteId ? syncedNote : n));
+        await AsyncStorage.setItem(LOCAL_NOTES_KEY, JSON.stringify(finalNotes));
+        return syncedNote;
+      }
+    } catch (err) {
+      console.warn('Failed to sync note to Supabase, saved locally', err);
+    }
+  }
+
+  return updatedNote;
+}
+
+export async function deleteDailyNote(noteId: string, userId?: string | null): Promise<void> {
+  const currentNotes = await fetchDailyNotes(userId);
+  const nextList = currentNotes.filter((n) => n.id !== noteId);
+  await AsyncStorage.setItem(LOCAL_NOTES_KEY, JSON.stringify(nextList));
+
+  if (isSupabaseConfigured() && userId && !noteId.startsWith('local_')) {
+    try {
+      const supabase = getSupabase();
+      await supabase.from('daily_notes').delete().eq('id', noteId).eq('user_id', userId);
+    } catch (err) {
+      console.warn('Failed to delete note from Supabase', err);
+    }
+  }
+}
+
+export async function togglePinDailyNote(
+  noteId: string,
+  isPinned: boolean,
+  userId?: string | null
+): Promise<void> {
+  const currentNotes = await fetchDailyNotes(userId);
+  const nextList = currentNotes.map((n) => (n.id === noteId ? { ...n, isPinned } : n));
+  await AsyncStorage.setItem(LOCAL_NOTES_KEY, JSON.stringify(nextList));
+
+  if (isSupabaseConfigured() && userId && !noteId.startsWith('local_')) {
+    try {
+      const supabase = getSupabase();
+      await supabase
+        .from('daily_notes')
+        .update({ is_pinned: isPinned, updated_at: new Date().toISOString() })
+        .eq('id', noteId)
+        .eq('user_id', userId);
+    } catch {}
+  }
+}
+
