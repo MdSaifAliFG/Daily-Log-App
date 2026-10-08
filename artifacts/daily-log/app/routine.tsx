@@ -102,7 +102,7 @@ export default function RoutineScreen() {
   };
 
   return (
-    <Page>
+    <Page hideHeader>
       <KeyboardAwareScrollViewCompat showsVerticalScrollIndicator={false}>
         <View style={local.header}>
           <IconButton icon="x" label="Close routine settings" onPress={() => router.back()} />

@@ -734,3 +734,161 @@ export async function togglePinDailyNote(
   }
 }
 
+// ---------------------------------------------------------------------------
+// 8. Global Universal Search
+// ---------------------------------------------------------------------------
+export interface GlobalSearchResult {
+  id: string;
+  type: 'note' | 'journal' | 'routine' | 'reflection';
+  title: string;
+  snippet: string;
+  date?: string;
+  badge?: string;
+  metadata?: Record<string, any>;
+}
+
+export async function performGlobalSearch(
+  query: string,
+  userId?: string | null
+): Promise<GlobalSearchResult[]> {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+
+  const results: GlobalSearchResult[] = [];
+
+  // 1. Search Daily Notes
+  try {
+    const notes = await fetchDailyNotes(userId);
+    for (const note of notes) {
+      const matchTitle = note.title.toLowerCase().includes(q);
+      const matchContent = note.content.toLowerCase().includes(q);
+      const matchCategory = note.category.toLowerCase().includes(q);
+      const matchDate = note.date.includes(q);
+
+      if (matchTitle || matchContent || matchCategory || matchDate) {
+        results.push({
+          id: `note_${note.id}`,
+          type: 'note',
+          title: note.title || 'Untitled Note',
+          snippet: note.content ? note.content.slice(0, 140) : 'Quick note',
+          date: note.date,
+          badge: note.category || 'Note',
+          metadata: { noteId: note.id },
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('Global search notes error', err);
+  }
+
+  // 2. Search Journal Entries
+  try {
+    if (isSupabaseConfigured() && userId) {
+      const supabase = getSupabase();
+      const { data: entries, error } = await supabase
+        .from('entries')
+        .select('*')
+        .eq('user_id', userId)
+        .or(`journal_text.ilike.%${q}%,date.ilike.%${q}%`)
+        .order('date', { ascending: false })
+        .limit(15);
+
+      if (entries && !error) {
+        for (const e of entries) {
+          const prioritiesText = Array.isArray(e.top_priorities)
+            ? e.top_priorities.filter(Boolean).join(' · ')
+            : '';
+          results.push({
+            id: `entry_${e.id || e.date}`,
+            type: 'journal',
+            title: `Journal (${e.date})`,
+            snippet: e.journal_text || prioritiesText || 'Journal entry recorded',
+            date: e.date,
+            badge: e.mood_rating ? `Mood ${e.mood_rating}/5` : 'Journal',
+            metadata: { date: e.date },
+          });
+        }
+      }
+    } else {
+      const allKeys = await AsyncStorage.getAllKeys();
+      const entryKeys = allKeys.filter((k) => k.startsWith(LOCAL_ENTRIES_KEY));
+      for (const key of entryKeys) {
+        const raw = await AsyncStorage.getItem(key);
+        if (raw) {
+          try {
+            const entry: Entry = JSON.parse(raw);
+            const matchText = entry.journalText?.toLowerCase().includes(q);
+            const matchDate = entry.date?.toLowerCase().includes(q);
+            const matchPriorities = entry.topPriorities?.some((p) => p.toLowerCase().includes(q));
+            if (matchText || matchDate || matchPriorities) {
+              const pText = entry.topPriorities?.filter(Boolean).join(' · ') || '';
+              results.push({
+                id: `entry_${entry.date}`,
+                type: 'journal',
+                title: `Journal (${entry.date})`,
+                snippet: entry.journalText || pText || 'Journal entry recorded',
+                date: entry.date,
+                badge: entry.moodRating ? `Mood ${entry.moodRating}/5` : 'Journal',
+                metadata: { date: entry.date },
+              });
+            }
+          } catch {}
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Global search entries error', err);
+  }
+
+  // 3. Search Routine Items
+  try {
+    const routines = await fetchRoutineItems(userId);
+    for (const r of routines) {
+      if (r.name.toLowerCase().includes(q)) {
+        results.push({
+          id: `routine_${r.id}`,
+          type: 'routine',
+          title: r.name,
+          snippet: 'Daily Habit & Routine',
+          badge: 'Habit',
+          metadata: { routineId: r.id },
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('Global search routines error', err);
+  }
+
+  // 4. Search Weekly Reflections
+  try {
+    if (isSupabaseConfigured() && userId) {
+      const supabase = getSupabase();
+      const { data: reflections } = await supabase
+        .from('weekly_reflections')
+        .select('*')
+        .eq('user_id', userId)
+        .or(`went_well.ilike.%${q}%,improve.ilike.%${q}%,week_start_date.ilike.%${q}%`)
+        .limit(8);
+
+      if (reflections) {
+        for (const ref of reflections) {
+          results.push({
+            id: `reflection_${ref.week_start_date}`,
+            type: 'reflection',
+            title: `Weekly Reflection (${ref.week_start_date})`,
+            snippet: ref.went_well ? `Went well: ${ref.went_well}` : `Improve: ${ref.improve}`,
+            date: ref.week_start_date,
+            badge: 'Reflection',
+            metadata: { weekStartDate: ref.week_start_date },
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Global search reflections error', err);
+  }
+
+  return results;
+}
+
+

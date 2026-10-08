@@ -3,12 +3,36 @@ import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, Vi
 import { Feather } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppHeader } from './AppHeader';
 
-export function Page({ children, scroll = true }: { children: ReactNode; scroll?: boolean }) {
+export function Page({
+  children,
+  scroll = true,
+  hideHeader = false,
+}: {
+  children: ReactNode;
+  scroll?: boolean;
+  hideHeader?: boolean;
+}) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const content = <View style={[styles.page, { backgroundColor: colors.background, paddingTop: insets.top + (Platform.OS === 'web' ? 67 : 12), paddingBottom: insets.bottom + 92 }]}>{children}</View>;
-  return scroll ? <View style={[styles.flex, { backgroundColor: colors.background }]}>{content}</View> : content;
+  return (
+    <View style={[styles.flex, { backgroundColor: colors.background }]}>
+      {!hideHeader && <AppHeader />}
+      <View
+        style={[
+          styles.page,
+          {
+            backgroundColor: colors.background,
+            paddingTop: hideHeader ? insets.top + (Platform.OS === 'web' ? 24 : 12) : 14,
+            paddingBottom: insets.bottom + 92,
+          },
+        ]}
+      >
+        {children}
+      </View>
+    </View>
+  );
 }
 
 export function SectionTitle({ eyebrow, title, right }: { eyebrow?: string; title: string; right?: ReactNode }) {
