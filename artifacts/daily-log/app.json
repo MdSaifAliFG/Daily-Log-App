@@ -14,7 +14,7 @@
       "package": "com.dailylog.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#23303e"
       }
     },
     "web": {

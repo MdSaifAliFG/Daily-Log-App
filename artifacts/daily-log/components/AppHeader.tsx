@@ -151,11 +151,11 @@ export function AppHeader() {
             style={({ pressed }) => [styles.brandWrapper, { opacity: pressed ? 0.75 : 1 }]}
             onPress={() => router.push('/')}
           >
-            <View style={[styles.logoBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.logoBox}>
               <Image
                 source={require('@/assets/images/logo.png')}
                 style={styles.logoImage}
-                resizeMode="cover"
+                resizeMode="contain"
               />
             </View>
             <View style={styles.brandTextWrap}>
@@ -405,13 +405,17 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   logoBox: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    borderWidth: 1,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 2,
   },
   logoImage: {
     width: '100%',

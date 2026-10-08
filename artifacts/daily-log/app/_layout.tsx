@@ -31,16 +31,14 @@ const queryClient = new QueryClient({
   },
 });
 
+import { LoadingScreen } from '@/components/LoadingScreen';
+
 function RootLayoutNav() {
   const { user, isLoading } = useAuth();
   const colors = useColors();
 
   if (isLoading) {
-    return (
-      <View style={[local.loadingContainer, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+    return <LoadingScreen />;
   }
 
   // If user is not signed in, display the Landing / Welcome screen

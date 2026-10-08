@@ -25,93 +25,120 @@ export function WelcomeView() {
         contentContainerStyle={[
           local.scrollContent,
           {
-            paddingTop: insets.top + (Platform.OS === 'web' ? 40 : 24),
-            paddingBottom: insets.bottom + 36,
+            paddingTop: insets.top + (Platform.OS === 'web' ? 24 : 16),
+            paddingBottom: insets.bottom + (Platform.OS === 'web' ? 24 : 18),
           },
         ]}
         showsVerticalScrollIndicator={false}
+        bounces={false}
       >
-        {/* Brand / Logo Hero */}
-        <View style={local.heroSection}>
-          <View style={[local.logoContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Image
-              source={require('@/assets/images/logo.png')}
-              style={local.logoImage}
-              resizeMode="contain"
-            />
+        <View style={local.contentWrap}>
+          {/* 1. Top Eyebrow Pill */}
+          <View style={[local.eyebrowBadge, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
+            <Text style={[local.eyebrowText, { color: colors.primary }]}>
+              MINDFUL DAILY LIVING
+            </Text>
           </View>
 
-          <Text style={[local.appName, { color: colors.foreground }]}>Daily Log</Text>
-          <Text style={[local.tagline, { color: colors.mutedForeground }]}>
-            A quiet, thoughtful space for your daily rhythm, essential rituals, and gentle reflections.
-          </Text>
-        </View>
+          {/* 2. Brand Hero Section */}
+          <View style={local.heroSection}>
+            <View style={local.logoShadowWrap}>
+              <View style={[local.logoContainer, { backgroundColor: colors.card }]}>
+                <Image
+                  source={require('@/assets/images/logo.png')}
+                  style={local.logoImage}
+                  resizeMode="contain"
+                />
+              </View>
+            </View>
 
-        {/* Feature Highlights Grid */}
-        <View style={local.featuresContainer}>
-          <FeatureCard
-            icon="book-open"
-            title="Daily Mindfulness"
-            description="Clear the mental clutter with intentional journaling, mood check-ins, and 3 key priorities."
-            colors={colors}
-          />
-          <FeatureCard
-            icon="check-circle"
-            title="Non-Negotiable Routines"
-            description="Anchor your day with repeatable rituals like restful sleep, deep work blocks, and morning breath."
-            colors={colors}
-          />
-          <FeatureCard
-            icon="trending-up"
-            title="Weekly & Monthly Rhythm"
-            description="Notice patterns without pressure: streaks, completion percentages, and quiet reflections."
-            colors={colors}
-          />
-          <FeatureCard
-            icon="shield"
-            title="Private & Encrypted Sync"
-            description="Your daily thoughts and personal records are encrypted and accessible only to you."
-            colors={colors}
-          />
-        </View>
-
-        {/* Action Controls */}
-        <View style={local.ctaSection}>
-          <Pressable
-            style={({ pressed }) => [
-              local.primaryBtn,
-              { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
-            ]}
-            onPress={() => {
-              setAuthMode('signup');
-              setAuthVisible(true);
-            }}
-          >
-            <Feather name="user-plus" size={18} color={colors.primaryForeground} style={local.btnIcon} />
-            <Text style={[local.primaryBtnText, { color: colors.primaryForeground }]}>
-              Get Started — Create Account
+            <Text style={[local.appName, { color: colors.foreground }]}>Daily Log</Text>
+            <Text style={[local.tagline, { color: colors.mutedForeground }]}>
+              A quiet sanctuary for your daily rhythm, essential rituals, and gentle reflections.
             </Text>
-          </Pressable>
+          </View>
 
-          <Pressable
-            style={({ pressed }) => [
-              local.secondaryBtn,
-              { backgroundColor: colors.secondary, borderColor: colors.border, opacity: pressed ? 0.75 : 1 },
-            ]}
-            onPress={() => {
-              setAuthMode('signin');
-              setAuthVisible(true);
-            }}
-          >
-            <Feather name="log-in" size={18} color={colors.secondaryForeground} style={local.btnIcon} />
-            <Text style={[local.secondaryBtnText, { color: colors.secondaryForeground }]}>
-              I already have an account — Sign In
+          {/* 3. Compact 2x2 Feature Highlights (Fits comfortably on screen) */}
+          <View style={local.featureGrid}>
+            <View style={[local.microFeatureCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[local.microIconWrap, { backgroundColor: colors.secondary }]}>
+                <Feather name="book-open" size={15} color={colors.primary} />
+              </View>
+              <View style={local.microTextWrap}>
+                <Text style={[local.microTitle, { color: colors.foreground }]}>Daily Notes & Mood</Text>
+                <Text style={[local.microDesc, { color: colors.mutedForeground }]}>Intentional journaling</Text>
+              </View>
+            </View>
+
+            <View style={[local.microFeatureCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[local.microIconWrap, { backgroundColor: colors.secondary }]}>
+                <Feather name="check-circle" size={15} color={colors.primary} />
+              </View>
+              <View style={local.microTextWrap}>
+                <Text style={[local.microTitle, { color: colors.foreground }]}>Micro-Routines</Text>
+                <Text style={[local.microDesc, { color: colors.mutedForeground }]}>Repeatable daily rituals</Text>
+              </View>
+            </View>
+
+            <View style={[local.microFeatureCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[local.microIconWrap, { backgroundColor: colors.secondary }]}>
+                <Feather name="trending-up" size={15} color={colors.primary} />
+              </View>
+              <View style={local.microTextWrap}>
+                <Text style={[local.microTitle, { color: colors.foreground }]}>Gentle Rhythm</Text>
+                <Text style={[local.microDesc, { color: colors.mutedForeground }]}>Streaks without pressure</Text>
+              </View>
+            </View>
+
+            <View style={[local.microFeatureCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[local.microIconWrap, { backgroundColor: colors.secondary }]}>
+                <Feather name="shield" size={15} color={colors.primary} />
+              </View>
+              <View style={local.microTextWrap}>
+                <Text style={[local.microTitle, { color: colors.foreground }]}>Private & Encrypted</Text>
+                <Text style={[local.microDesc, { color: colors.mutedForeground }]}>Only for your eyes</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* 4. Action Controls */}
+          <View style={local.ctaSection}>
+            <Pressable
+              style={({ pressed }) => [
+                local.primaryBtn,
+                { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
+              ]}
+              onPress={() => {
+                setAuthMode('signup');
+                setAuthVisible(true);
+              }}
+            >
+              <Text style={[local.primaryBtnText, { color: colors.primaryForeground }]}>
+                Get Started with Phone
+              </Text>
+              <Feather name="arrow-right" size={17} color={colors.primaryForeground} style={local.btnIconRight} />
+            </Pressable>
+
+            <Pressable
+              style={({ pressed }) => [
+                local.secondaryBtn,
+                { backgroundColor: colors.secondary, borderColor: colors.border, opacity: pressed ? 0.75 : 1 },
+              ]}
+              onPress={() => {
+                setAuthMode('signin');
+                setAuthVisible(true);
+              }}
+            >
+              <Feather name="log-in" size={15} color={colors.secondaryForeground} style={local.btnIconLeft} />
+              <Text style={[local.secondaryBtnText, { color: colors.secondaryForeground }]}>
+                I already have an account — Sign In
+              </Text>
+            </Pressable>
+
+            <Text style={[local.privacyNote, { color: colors.mutedForeground }]}>
+              🔒 Fully encrypted • Cloud synced • Zero ads
             </Text>
-          </Pressable>
-
-          <Text style={[local.privacyNote, { color: colors.mutedForeground }]}>
-            🔒 Fully private & secure. Your words belong only to you.
-          </Text>
+          </View>
         </View>
       </ScrollView>
 
@@ -125,161 +152,166 @@ export function WelcomeView() {
   );
 }
 
-function FeatureCard({
-  icon,
-  title,
-  description,
-  colors,
-}: {
-  icon: keyof typeof Feather.glyphMap;
-  title: string;
-  description: string;
-  colors: ReturnType<typeof useColors>;
-}) {
-  return (
-    <View style={[local.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      <View style={[local.cardIconWrap, { backgroundColor: colors.secondary }]}>
-        <Feather name={icon} size={20} color={colors.primary} />
-      </View>
-      <View style={local.cardContent}>
-        <Text style={[local.cardTitle, { color: colors.foreground }]}>{title}</Text>
-        <Text style={[local.cardDesc, { color: colors.mutedForeground }]}>{description}</Text>
-      </View>
-    </View>
-  );
-}
-
 const local = StyleSheet.create({
   container: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    flexGrow: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  contentWrap: {
+    width: '100%',
+    maxWidth: 500,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  eyebrowBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 14,
+  },
+  eyebrowText: {
+    fontFamily: 'Amazon Ember Display',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
   heroSection: {
     alignItems: 'center',
-    marginBottom: 28,
+    marginBottom: 16,
     width: '100%',
-    maxWidth: 520,
+  },
+  logoShadowWrap: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.16,
+    shadowRadius: 14,
+    elevation: 5,
+    marginBottom: 12,
   },
   logoContainer: {
-    width: 104,
-    height: 104,
-    borderRadius: 30,
-    borderWidth: 1,
+    width: 82,
+    height: 82,
+    borderRadius: 22,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-    overflow: 'hidden',
   },
   logoImage: {
-    width: 88,
-    height: 88,
-    borderRadius: 24,
+    width: '100%',
+    height: '100%',
   },
   appName: {
     fontFamily: 'Amazon Ember Display',
-    fontSize: 34,
+    fontSize: 30,
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
     letterSpacing: -0.5,
   },
   tagline: {
     fontFamily: 'Amazon Ember Display',
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 14,
+    lineHeight: 20,
     textAlign: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
   },
-  featuresContainer: {
-    width: '100%',
-    maxWidth: 520,
-    gap: 12,
-    marginBottom: 28,
-  },
-  card: {
+  featureGrid: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    padding: 16,
-    borderRadius: 18,
-    borderWidth: 1,
-    gap: 14,
+    flexWrap: 'wrap',
+    gap: 8,
+    width: '100%',
+    marginBottom: 20,
   },
-  cardIconWrap: {
-    width: 44,
-    height: 44,
+  microFeatureCard: {
+    width: '48.5%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderRadius: 14,
+    borderWidth: 1,
+  },
+  microIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
   },
-  cardContent: {
+  microTextWrap: {
     flex: 1,
   },
-  cardTitle: {
+  microTitle: {
     fontFamily: 'Amazon Ember Display',
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: '700',
-    marginBottom: 4,
+    lineHeight: 16,
   },
-  cardDesc: {
+  microDesc: {
     fontFamily: 'Amazon Ember Display',
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 11,
+    lineHeight: 15,
   },
   ctaSection: {
     width: '100%',
-    maxWidth: 520,
-    gap: 12,
+    gap: 10,
     alignItems: 'center',
   },
   primaryBtn: {
     width: '100%',
-    height: 52,
-    borderRadius: 26,
+    height: 48,
+    borderRadius: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.12,
-    shadowRadius: 5,
+    shadowRadius: 6,
     elevation: 3,
+    paddingHorizontal: 20,
   },
-  btnIcon: {
+  btnIconRight: {
+    marginLeft: 8,
+  },
+  btnIconLeft: {
     marginRight: 8,
   },
   primaryBtnText: {
     fontFamily: 'Amazon Ember Display',
     fontSize: 15,
     fontWeight: '700',
+    letterSpacing: 0.2,
   },
   secondaryBtn: {
     width: '100%',
-    height: 50,
-    borderRadius: 25,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 16,
   },
   secondaryBtnText: {
     fontFamily: 'Amazon Ember Display',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
   privacyNote: {
     fontFamily: 'Amazon Ember Display',
-    fontSize: 12,
+    fontSize: 11,
     textAlign: 'center',
-    marginTop: 6,
-    lineHeight: 17,
+    marginTop: 2,
+    lineHeight: 16,
   },
 });
