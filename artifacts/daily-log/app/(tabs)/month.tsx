@@ -214,7 +214,7 @@ const local = StyleSheet.create({
     marginBottom: 16,
   },
   monthTitle: {
-    fontFamily: 'Georgia',
+    fontFamily: 'Amazon Ember Display',
     fontSize: 22,
   },
   weekdays: {
@@ -222,6 +222,7 @@ const local = StyleSheet.create({
     marginBottom: 7,
   },
   weekday: {
+    fontFamily: 'Amazon Ember Display',
     flex: 1,
     textAlign: 'center',
     fontSize: 12,
@@ -247,6 +248,7 @@ const local = StyleSheet.create({
     borderWidth: 2,
   },
   dayNumber: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 13,
     fontWeight: '700',
   },
@@ -272,11 +274,12 @@ const local = StyleSheet.create({
     gap: 8,
   },
   statValue: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 18,
     fontWeight: '700',
   },
   observation: {
-    fontFamily: 'Georgia',
+    fontFamily: 'Amazon Ember Display',
     fontSize: 17,
     lineHeight: 25,
     marginTop: 6,

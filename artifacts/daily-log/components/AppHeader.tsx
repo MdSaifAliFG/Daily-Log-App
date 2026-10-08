@@ -421,12 +421,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   brandName: {
-    fontFamily: 'Georgia',
+    fontFamily: 'Amazon Ember Display',
     fontSize: 18,
     fontWeight: '700',
     letterSpacing: -0.3,
   },
   brandTagline: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 10,
     fontWeight: '500',
     letterSpacing: 0.2,
@@ -447,6 +448,7 @@ const styles = StyleSheet.create({
     marginRight: 2,
   },
   searchPlaceholder: {
+    fontFamily: 'Amazon Ember Display',
     flex: 1,
     fontSize: 13,
   },
@@ -457,6 +459,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   kbdText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 10,
     fontWeight: '700',
   },
@@ -469,6 +472,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarInitial: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 14,
     fontWeight: '700',
   },
@@ -510,6 +514,7 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   searchInput: {
+    fontFamily: 'Amazon Ember Display',
     flex: 1,
     fontSize: 16,
     paddingVertical: 4,
@@ -523,6 +528,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   closeBtnText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 11,
     fontWeight: '700',
   },
@@ -540,6 +546,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   filterText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -577,6 +584,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   resultTitle: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 14,
     fontWeight: '700',
     flex: 1,
@@ -587,14 +595,17 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   badgeText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 10,
     fontWeight: '600',
   },
   resultSnippet: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 12,
     lineHeight: 17,
   },
   resultDate: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 11,
     marginTop: 2,
   },
@@ -605,11 +616,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   feedbackTitle: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 15,
     fontWeight: '700',
     marginBottom: 4,
   },
   feedbackText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 18,

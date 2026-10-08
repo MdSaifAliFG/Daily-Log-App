@@ -254,6 +254,7 @@ const local = StyleSheet.create({
   rangeText: {
     fontSize: 16,
     fontWeight: '700',
+    fontFamily: 'Amazon Ember Display',
   },
   summaryTop: {
     flexDirection: 'row',
@@ -261,7 +262,7 @@ const local = StyleSheet.create({
     alignItems: 'center',
   },
   bigNumber: {
-    fontFamily: 'Georgia',
+    fontFamily: 'Amazon Ember Display',
     fontSize: 42,
     marginTop: 4,
   },
@@ -282,11 +283,13 @@ const local = StyleSheet.create({
     alignItems: 'center',
   },
   dayName: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 16,
     fontWeight: '700',
     marginBottom: 3,
   },
   percent: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 18,
     fontWeight: '700',
   },
@@ -314,10 +317,12 @@ const local = StyleSheet.create({
     borderRadius: 10,
   },
   entryPillText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 11,
     fontWeight: '600',
   },
   prompt: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 14,
     fontWeight: '700',
     marginBottom: 8,

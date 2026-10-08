@@ -347,13 +347,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   eyebrow: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
   headerTitle: {
-    fontFamily: 'Georgia',
+    fontFamily: 'Amazon Ember Display',
     fontSize: 20,
     fontWeight: '700',
   },
@@ -369,6 +370,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   todayBtnText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -398,6 +400,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   weekdayText: {
+    fontFamily: 'Amazon Ember Display',
     flex: 1,
     textAlign: 'center',
     fontSize: 12,
@@ -422,6 +425,7 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   dayNumberText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 14,
   },
   holidayBadgeWrap: {
@@ -457,6 +461,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   holidayName: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 15,
     fontWeight: '700',
   },
@@ -466,10 +471,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   holidayTypeTagText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 10,
     fontWeight: '700',
   },
   holidayDesc: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 12,
     lineHeight: 16,
   },
@@ -484,10 +491,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionTitle: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 13,
     fontWeight: '700',
   },
   noHolidaysText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 13,
     fontStyle: 'italic',
     paddingVertical: 8,
@@ -505,10 +514,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   holidayListTitle: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 13,
     fontWeight: '600',
   },
   holidayListDate: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 11,
     marginTop: 2,
   },

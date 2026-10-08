@@ -292,13 +292,14 @@ const local = StyleSheet.create({
     marginBottom: 16,
   },
   eyebrow: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
   title: {
-    fontFamily: 'Georgia',
+    fontFamily: 'Amazon Ember Display',
     fontSize: 24,
     fontWeight: '700',
     marginTop: 2,
@@ -330,6 +331,7 @@ const local = StyleSheet.create({
     elevation: 2,
   },
   tabText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -340,6 +342,7 @@ const local = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 8,
@@ -365,6 +368,7 @@ const local = StyleSheet.create({
     marginRight: 4,
   },
   countryCode: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 14,
     fontWeight: '700',
   },
@@ -374,6 +378,7 @@ const local = StyleSheet.create({
     marginLeft: 10,
   },
   input: {
+    fontFamily: 'Amazon Ember Display',
     flex: 1,
     height: '100%',
     fontSize: 15,
@@ -387,6 +392,7 @@ const local = StyleSheet.create({
     marginBottom: 16,
   },
   messageText: {
+    fontFamily: 'Amazon Ember Display',
     flex: 1,
     fontSize: 13,
     lineHeight: 18,
@@ -400,6 +406,7 @@ const local = StyleSheet.create({
     marginBottom: 12,
   },
   submitText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 15,
     fontWeight: '700',
   },
@@ -409,9 +416,11 @@ const local = StyleSheet.create({
     marginBottom: 12,
   },
   switchPromptText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 13,
   },
   footerNote: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 12,
     textAlign: 'center',
     lineHeight: 17,

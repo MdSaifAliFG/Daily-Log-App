@@ -427,7 +427,7 @@ const local = StyleSheet.create({
     flex: 1,
   },
   date: {
-    fontFamily: 'Georgia',
+    fontFamily: 'Amazon Ember Display',
     fontSize: 27,
     marginTop: 3,
   },
@@ -461,6 +461,7 @@ const local = StyleSheet.create({
     borderWidth: 1,
   },
   moodLabel: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 11,
   },
   priorityRow: {
@@ -469,6 +470,7 @@ const local = StyleSheet.create({
     gap: 10,
   },
   priorityNumber: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 12,
     fontWeight: '700',
     width: 20,
@@ -485,6 +487,7 @@ const local = StyleSheet.create({
     borderRadius: 3,
   },
   routineName: {
+    fontFamily: 'Amazon Ember Display',
     flex: 1,
     fontSize: 16,
   },
@@ -495,7 +498,7 @@ const local = StyleSheet.create({
     paddingVertical: 8,
   },
   snippet: {
-    fontFamily: 'Georgia',
+    fontFamily: 'Amazon Ember Display',
     fontSize: 18,
     lineHeight: 27,
     marginTop: 7,
@@ -515,6 +518,7 @@ const local = StyleSheet.create({
     fontSize: 14,
   },
   holidayText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 12,
     fontWeight: '600',
   },

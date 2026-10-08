@@ -586,13 +586,14 @@ const local = StyleSheet.create({
     alignItems: 'center',
   },
   headerEyebrow: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
   headerTitle: {
-    fontFamily: 'Georgia',
+    fontFamily: 'Amazon Ember Display',
     fontSize: 20,
     fontWeight: '700',
     marginTop: 2,
@@ -645,7 +646,7 @@ const local = StyleSheet.create({
     justifyContent: 'center',
   },
   initialAvatarText: {
-    fontFamily: 'Georgia',
+    fontFamily: 'Amazon Ember Display',
     fontSize: 36,
     fontWeight: '700',
   },
@@ -666,7 +667,7 @@ const local = StyleSheet.create({
     gap: 4,
   },
   profileNameTitle: {
-    fontFamily: 'Georgia',
+    fontFamily: 'Amazon Ember Display',
     fontSize: 22,
     fontWeight: '700',
   },
@@ -679,10 +680,12 @@ const local = StyleSheet.create({
     fontSize: 14,
   },
   phoneText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 13,
     fontWeight: '600',
   },
   memberSinceText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 12,
   },
   changePhotoBtn: {
@@ -697,6 +700,7 @@ const local = StyleSheet.create({
     marginTop: 16,
   },
   changePhotoText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 13,
     fontWeight: '700',
   },
@@ -710,16 +714,19 @@ const local = StyleSheet.create({
     marginBottom: 6,
   },
   fieldLabel: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   fieldActionLink: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 13,
     fontWeight: '700',
   },
   fieldValue: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 15,
     lineHeight: 22,
   },
@@ -729,6 +736,7 @@ const local = StyleSheet.create({
     gap: 8,
   },
   inputField: {
+    fontFamily: 'Amazon Ember Display',
     flex: 1,
     height: 44,
     borderRadius: 12,
@@ -742,6 +750,7 @@ const local = StyleSheet.create({
     borderRadius: 12,
   },
   saveBtnText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 13,
     fontWeight: '700',
   },
@@ -785,10 +794,12 @@ const local = StyleSheet.create({
     marginBottom: 2,
   },
   statValue: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 16,
     fontWeight: '700',
   },
   statLabel: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 11,
     textAlign: 'center',
   },
@@ -817,11 +828,13 @@ const local = StyleSheet.create({
     justifyContent: 'center',
   },
   actionTitle: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 14,
     fontWeight: '700',
     marginBottom: 2,
   },
   actionDetail: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 12,
     lineHeight: 16,
   },
@@ -847,7 +860,7 @@ const local = StyleSheet.create({
     marginBottom: 16,
   },
   modalTitle: {
-    fontFamily: 'Georgia',
+    fontFamily: 'Amazon Ember Display',
     fontSize: 20,
     fontWeight: '700',
   },
@@ -861,14 +874,17 @@ const local = StyleSheet.create({
     marginBottom: 16,
   },
   pickerOptionTitle: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 14,
     fontWeight: '700',
   },
   pickerOptionSubtitle: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 12,
     marginTop: 2,
   },
   presetsHeader: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -900,6 +916,7 @@ const local = StyleSheet.create({
     fontSize: 22,
   },
   presetLabel: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 10,
     fontWeight: '600',
     textAlign: 'center',
@@ -909,11 +926,13 @@ const local = StyleSheet.create({
     paddingTop: 16,
   },
   deleteWarning: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 14,
   },
   confirmPrompt: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 13,
     marginBottom: 8,
   },

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -63,6 +63,10 @@ export default function RootLayout() {
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
+    'Amazon Ember Display': require('@/assets/fonts/AmazonEmberDisplay_Rg.ttf'),
+    'AmazonEmberDisplay-Regular': require('@/assets/fonts/AmazonEmberDisplay_Rg.ttf'),
+    'AmazonEmberDisplay-Medium': require('@/assets/fonts/AmazonEmberDisplay_Md.ttf'),
+    'AmazonEmberDisplay-Bold': require('@/assets/fonts/AmazonEmberDisplay_Bd.ttf'),
   });
 
   useEffect(() => {
@@ -70,6 +74,25 @@ export default function RootLayout() {
       SplashScreen.hideAsync().catch(() => {});
     }
   }, [fontsLoaded, fontError]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      const styleId = 'amazon-ember-display-global-font';
+      if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+          html, body, #root, input, textarea, select, button {
+            font-family: 'Amazon Ember Display', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+          }
+          [class*="css-text"]:not([style*="font-family: feather"]):not([style*="font-family: Feather"]) {
+            font-family: 'Amazon Ember Display', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    }
+  }, []);
 
   if (!fontsLoaded && !fontError) return null;
 

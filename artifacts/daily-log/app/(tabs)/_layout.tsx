@@ -56,6 +56,11 @@ function ClassicTabLayout() {
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.mutedForeground,
+        tabBarLabelStyle: {
+          fontFamily: 'Amazon Ember Display',
+          fontWeight: '600',
+          fontSize: 11,
+        },
         headerShown: false,
         tabBarStyle: {
           position: 'absolute',

@@ -31,6 +31,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 20,
     fontWeight: 'bold',
   },
@@ -39,6 +40,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
   },
   linkText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 14,
   },
 });

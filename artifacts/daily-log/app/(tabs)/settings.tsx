@@ -314,16 +314,17 @@ const local = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: {
-    fontFamily: 'Georgia',
+    fontFamily: 'Amazon Ember Display',
     fontSize: 22,
     fontWeight: '700',
   },
   userName: {
-    fontFamily: 'Georgia',
+    fontFamily: 'Amazon Ember Display',
     fontSize: 18,
     fontWeight: '700',
   },
   phoneText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 13,
     marginTop: 2,
   },
@@ -337,6 +338,7 @@ const local = StyleSheet.create({
     borderWidth: 1,
   },
   viewProfileBtnText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -346,6 +348,7 @@ const local = StyleSheet.create({
     borderRadius: 12,
   },
   themePillText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 11,
     fontWeight: '700',
   },
@@ -369,11 +372,13 @@ const local = StyleSheet.create({
     justifyContent: 'center',
   },
   themeTitle: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 14,
     fontWeight: '700',
     marginBottom: 2,
   },
   themeSubtitle: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 12,
   },
   radioCircle: {
@@ -400,11 +405,13 @@ const local = StyleSheet.create({
     justifyContent: 'center',
   },
   rowTitle: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 14,
     fontWeight: '700',
     marginBottom: 2,
   },
   rowDetail: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 12,
     lineHeight: 16,
   },
@@ -424,12 +431,13 @@ const local = StyleSheet.create({
     borderTopWidth: 1,
   },
   privacyText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 12,
     flex: 1,
     lineHeight: 16,
   },
   quote: {
-    fontFamily: 'Georgia',
+    fontFamily: 'Amazon Ember Display',
     fontSize: 15,
     fontStyle: 'italic',
     lineHeight: 22,

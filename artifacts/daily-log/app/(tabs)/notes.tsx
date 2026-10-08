@@ -498,7 +498,7 @@ const local = StyleSheet.create({
     marginBottom: 16,
   },
   headerTitle: {
-    fontFamily: 'Georgia',
+    fontFamily: 'Amazon Ember Display',
     fontSize: 28,
     fontWeight: '700',
     marginTop: 2,
@@ -513,6 +513,7 @@ const local = StyleSheet.create({
     marginTop: 4,
   },
   newNoteBtnText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 13,
     fontWeight: '700',
   },
@@ -529,6 +530,7 @@ const local = StyleSheet.create({
     marginRight: 10,
   },
   searchInput: {
+    fontFamily: 'Amazon Ember Display',
     flex: 1,
     height: '100%',
     fontSize: 14,
@@ -549,6 +551,7 @@ const local = StyleSheet.create({
     borderWidth: 1,
   },
   categoryText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 13,
     fontWeight: '600',
   },
@@ -566,7 +569,7 @@ const local = StyleSheet.create({
     marginBottom: 6,
   },
   noteTitle: {
-    fontFamily: 'Georgia',
+    fontFamily: 'Amazon Ember Display',
     fontSize: 18,
     fontWeight: '700',
     lineHeight: 24,
@@ -580,6 +583,7 @@ const local = StyleSheet.create({
     marginLeft: 8,
   },
   noteSnippet: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 14,
     lineHeight: 21,
     marginBottom: 12,
@@ -601,10 +605,12 @@ const local = StyleSheet.create({
     borderRadius: 10,
   },
   badgeText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 11,
     fontWeight: '600',
   },
   noteMeta: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 12,
   },
   deleteNoteBtn: {
@@ -619,6 +625,7 @@ const local = StyleSheet.create({
     gap: 10,
   },
   emptyTitle: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 18,
     fontWeight: '700',
     marginTop: 6,
@@ -633,6 +640,7 @@ const local = StyleSheet.create({
     marginTop: 10,
   },
   createFirstBtnText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 13,
     fontWeight: '700',
   },
@@ -658,17 +666,19 @@ const local = StyleSheet.create({
     marginBottom: 16,
   },
   modalTitle: {
-    fontFamily: 'Georgia',
+    fontFamily: 'Amazon Ember Display',
     fontSize: 22,
     fontWeight: '700',
     marginTop: 2,
   },
   fieldLabel: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 6,
   },
   titleInput: {
+    fontFamily: 'Amazon Ember Display',
     height: 48,
     borderRadius: 14,
     borderWidth: 1,
@@ -687,6 +697,7 @@ const local = StyleSheet.create({
     borderWidth: 1,
   },
   chipText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 13,
     fontWeight: '600',
   },
@@ -697,11 +708,13 @@ const local = StyleSheet.create({
     marginVertical: 14,
   },
   pinLabel: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 2,
   },
   contentInput: {
+    fontFamily: 'Amazon Ember Display',
     height: 160,
     borderRadius: 14,
     borderWidth: 1,

@@ -184,7 +184,7 @@ const local = StyleSheet.create({
     borderRadius: 24,
   },
   appName: {
-    fontFamily: 'Georgia',
+    fontFamily: 'Amazon Ember Display',
     fontSize: 34,
     fontWeight: '700',
     textAlign: 'center',
@@ -192,6 +192,7 @@ const local = StyleSheet.create({
     letterSpacing: -0.5,
   },
   tagline: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 15,
     lineHeight: 22,
     textAlign: 'center',
@@ -223,11 +224,13 @@ const local = StyleSheet.create({
     flex: 1,
   },
   cardTitle: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 15,
     fontWeight: '700',
     marginBottom: 4,
   },
   cardDesc: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 13,
     lineHeight: 19,
   },
@@ -254,6 +257,7 @@ const local = StyleSheet.create({
     marginRight: 8,
   },
   primaryBtnText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 15,
     fontWeight: '700',
   },
@@ -267,10 +271,12 @@ const local = StyleSheet.create({
     justifyContent: 'center',
   },
   secondaryBtnText: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 14,
     fontWeight: '600',
   },
   privacyNote: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 12,
     textAlign: 'center',
     marginTop: 6,

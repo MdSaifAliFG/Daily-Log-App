@@ -225,7 +225,7 @@ const local = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontFamily: 'Georgia',
+    fontFamily: 'Amazon Ember Display',
     fontSize: 29,
     marginTop: 3,
   },
@@ -258,6 +258,7 @@ const local = StyleSheet.create({
     justifyContent: 'center',
   },
   itemName: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 16,
     fontWeight: '700',
     marginBottom: 3,
@@ -276,6 +277,7 @@ const local = StyleSheet.create({
     gap: 9,
   },
   emptyTitle: {
+    fontFamily: 'Amazon Ember Display',
     fontSize: 18,
     fontWeight: '700',
   },
