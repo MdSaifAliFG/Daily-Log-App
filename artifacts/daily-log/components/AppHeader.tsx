@@ -207,12 +207,16 @@ export function AppHeader() {
                 opacity: pressed ? 0.75 : 1,
               },
             ]}
-            onPress={() => router.push('/settings')}
-            accessibilityLabel="Open settings and profile"
+            onPress={() => router.push('/profile')}
+            accessibilityLabel="Open user profile"
           >
-            <Text style={[styles.avatarInitial, { color: colors.primary }]}>
-              {profile?.fullName ? profile.fullName[0].toUpperCase() : user?.email ? user.email[0].toUpperCase() : 'U'}
-            </Text>
+            {profile?.avatarUrl ? (
+              <Image source={{ uri: profile.avatarUrl }} style={styles.avatarImg} />
+            ) : (
+              <Text style={[styles.avatarInitial, { color: colors.primary }]}>
+                {profile?.fullName ? profile.fullName[0].toUpperCase() : 'U'}
+              </Text>
+            )}
           </Pressable>
         </View>
       </View>
@@ -467,6 +471,11 @@ const styles = StyleSheet.create({
   avatarInitial: {
     fontSize: 14,
     fontWeight: '700',
+  },
+  avatarImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 17,
   },
   modalBackdrop: {
     flex: 1,

@@ -9,6 +9,7 @@ export interface UserProfile {
   phoneNumber?: string;
   fullName: string;
   avatarUrl?: string;
+  bio?: string;
   createdAt?: string;
 }
 
@@ -29,7 +30,9 @@ interface AuthContextValue {
   signIn: (phone: string, password: string) => Promise<{ error?: string }>;
   signUp: (phone: string, password: string, fullName: string) => Promise<{ error?: string; message?: string }>;
   signOut: () => Promise<void>;
-  updateProfile: (fullName: string) => Promise<{ error?: string }>;
+  updateProfile: (
+    params: string | { fullName?: string; avatarUrl?: string; bio?: string }
+  ) => Promise<{ error?: string }>;
   deleteAccount: () => Promise<{ error?: string }>;
 }
 
@@ -92,6 +95,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: `${stored.phone10}@phone.local`,
           phoneNumber: stored.formattedPhone,
           fullName: stored.fullName,
+          avatarUrl: (stored as any).avatarUrl,
+          bio: (stored as any).bio,
           createdAt: stored.createdAt,
         });
         return;
@@ -132,6 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           phoneNumber: data.phone_number || phoneMeta,
           fullName: data.full_name || fallbackName,
           avatarUrl: data.avatar_url ?? undefined,
+          bio: currentUser.user_metadata?.bio || '',
           createdAt: data.created_at ?? currentUser.created_at,
         });
       } else {
@@ -371,20 +377,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateProfile = async (fullName: string): Promise<{ error?: string }> => {
+  const updateProfile = async (
+    params: string | { fullName?: string; avatarUrl?: string; bio?: string }
+  ): Promise<{ error?: string }> => {
     if (!profile) return { error: 'Not authenticated' };
     try {
-      const trimmed = fullName.trim();
-      if (!trimmed) return { error: 'Name cannot be empty' };
+      const updates = typeof params === 'string' ? { fullName: params } : params;
+      const nextFullName = updates.fullName !== undefined ? updates.fullName.trim() : profile.fullName;
+      const nextAvatar = updates.avatarUrl !== undefined ? updates.avatarUrl : profile.avatarUrl;
+      const nextBio = updates.bio !== undefined ? updates.bio.trim() : profile.bio;
 
       // Update Supabase if connected
       if (isSupabaseConfigured() && user) {
         try {
           const supabase = getSupabase();
-          await supabase
-            .from('profiles')
-            .upsert({ id: user.id, full_name: trimmed }, { onConflict: 'id' });
-          await supabase.auth.updateUser({ data: { full_name: trimmed } });
+          await supabase.from('profiles').upsert(
+            {
+              id: user.id,
+              full_name: nextFullName,
+              avatar_url: nextAvatar || '',
+            },
+            { onConflict: 'id' }
+          );
+          await supabase.auth.updateUser({
+            data: {
+              full_name: nextFullName,
+              avatar_url: nextAvatar || '',
+              bio: nextBio || '',
+            },
+          });
         } catch {}
       }
 
@@ -392,12 +413,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const accounts = await getStoredAccounts();
       const phone10 = profile.phoneNumber?.replace(/\D/g, '').slice(-10);
       if (phone10 && accounts[phone10]) {
-        accounts[phone10].fullName = trimmed;
+        accounts[phone10].fullName = nextFullName;
         await AsyncStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify(accounts));
-        await AsyncStorage.setItem(LOCAL_CURRENT_USER_KEY, JSON.stringify(accounts[phone10]));
+        await AsyncStorage.setItem(
+          LOCAL_CURRENT_USER_KEY,
+          JSON.stringify({
+            ...accounts[phone10],
+            avatarUrl: nextAvatar,
+            bio: nextBio,
+          })
+        );
       }
 
-      setProfile((prev) => (prev ? { ...prev, fullName: trimmed } : null));
+      setProfile((prev) =>
+        prev
+          ? {
+              ...prev,
+              fullName: nextFullName,
+              avatarUrl: nextAvatar,
+              bio: nextBio,
+            }
+          : null
+      );
       return {};
     } catch (err: unknown) {
       return { error: err instanceof Error ? err.message : 'Failed to update profile' };

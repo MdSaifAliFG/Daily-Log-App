@@ -41,10 +41,13 @@ function NativeTabLayout() {
   );
 }
 
+import { useAppearance } from '@/contexts/AppearanceContext';
+
 function ClassicTabLayout() {
   const colors = useColors();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { mode } = useAppearance();
+  const systemScheme = useColorScheme();
+  const isDark = (mode === 'system' ? systemScheme : mode) === 'dark';
   const isIOS = Platform.OS === 'ios';
   const isWeb = Platform.OS === 'web';
 
