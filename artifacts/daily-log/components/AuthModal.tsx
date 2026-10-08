@@ -25,7 +25,7 @@ export function AuthModal({ visible, onClose, initialMode = 'signin' }: AuthModa
   const { signIn, signUp } = useAuth();
 
   const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
-  const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -36,9 +36,9 @@ export function AuthModal({ visible, onClose, initialMode = 'signin' }: AuthModa
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    const cleanEmail = email.trim();
-    if (!cleanEmail || !cleanEmail.includes('@')) {
-      setErrorMessage('Please enter a valid email address.');
+    const cleanPhone = phoneNumber.replace(/\D/g, '');
+    if (cleanPhone.length < 10) {
+      setErrorMessage('Please enter a valid 10-digit mobile number.');
       return;
     }
 
@@ -48,7 +48,7 @@ export function AuthModal({ visible, onClose, initialMode = 'signin' }: AuthModa
     }
 
     if (mode === 'signup' && !fullName.trim()) {
-      setErrorMessage('Please enter your name.');
+      setErrorMessage('Please enter your full name.');
       return;
     }
 
@@ -56,21 +56,21 @@ export function AuthModal({ visible, onClose, initialMode = 'signin' }: AuthModa
 
     try {
       if (mode === 'signin') {
-        const result = await signIn(cleanEmail, password);
+        const result = await signIn(cleanPhone, password);
         if (result.error) {
           setErrorMessage(result.error);
         } else {
           onClose();
         }
       } else {
-        const result = await signUp(cleanEmail, password, fullName);
+        const result = await signUp(cleanPhone, password, fullName);
         if (result.error) {
           setErrorMessage(result.error);
         } else {
           setSuccessMessage(result.message || 'Account created successfully!');
           setTimeout(() => {
             onClose();
-          }, 1200);
+          }, 1000);
         }
       }
     } catch (err: unknown) {
@@ -91,7 +91,7 @@ export function AuthModal({ visible, onClose, initialMode = 'signin' }: AuthModa
                 {mode === 'signin' ? 'Welcome Back' : 'Create Account'}
               </Text>
               <Text style={[local.title, { color: colors.foreground }]}>
-                {mode === 'signin' ? 'Sign in to Daily Log' : 'Start your journal'}
+                {mode === 'signin' ? 'Phone Sign In' : 'Join Daily Log'}
               </Text>
             </View>
             <Pressable
@@ -154,12 +154,12 @@ export function AuthModal({ visible, onClose, initialMode = 'signin' }: AuthModa
             {/* Full Name for Sign Up */}
             {mode === 'signup' && (
               <View style={local.inputGroup}>
-                <Text style={[local.label, { color: colors.foreground }]}>Your Name</Text>
+                <Text style={[local.label, { color: colors.foreground }]}>Your Full Name</Text>
                 <View style={[local.inputWrapper, { backgroundColor: colors.background, borderColor: colors.input }]}>
                   <Feather name="user" size={18} color={colors.mutedForeground} style={local.inputIcon} />
                   <TextInput
                     style={[local.input, { color: colors.foreground }]}
-                    placeholder="e.g. Jordan Smith"
+                    placeholder="e.g. Saif Ali"
                     placeholderTextColor={colors.mutedForeground}
                     value={fullName}
                     onChangeText={setFullName}
@@ -169,19 +169,23 @@ export function AuthModal({ visible, onClose, initialMode = 'signin' }: AuthModa
               </View>
             )}
 
-            {/* Email Field */}
+            {/* Phone Number Field with +91 India badge */}
             <View style={local.inputGroup}>
-              <Text style={[local.label, { color: colors.foreground }]}>Email Address</Text>
+              <Text style={[local.label, { color: colors.foreground }]}>Mobile Number</Text>
               <View style={[local.inputWrapper, { backgroundColor: colors.background, borderColor: colors.input }]}>
-                <Feather name="mail" size={18} color={colors.mutedForeground} style={local.inputIcon} />
+                <View style={local.countryPrefix}>
+                  <Text style={local.flagIcon}>🇮🇳</Text>
+                  <Text style={[local.countryCode, { color: colors.foreground }]}>+91</Text>
+                  <View style={[local.prefixDivider, { backgroundColor: colors.border }]} />
+                </View>
                 <TextInput
                   style={[local.input, { color: colors.foreground }]}
-                  placeholder="your.email@example.com"
+                  placeholder="10-digit mobile number"
                   placeholderTextColor={colors.mutedForeground}
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
+                  value={phoneNumber}
+                  onChangeText={(val) => setPhoneNumber(val.replace(/[^\d\s]/g, ''))}
+                  keyboardType="phone-pad"
+                  maxLength={12}
                 />
               </View>
             </View>
@@ -232,14 +236,31 @@ export function AuthModal({ visible, onClose, initialMode = 'signin' }: AuthModa
                 <ActivityIndicator color={colors.primaryForeground} size="small" />
               ) : (
                 <Text style={[local.submitText, { color: colors.primaryForeground }]}>
-                  {mode === 'signin' ? 'Sign In' : 'Create Free Account'}
+                  {mode === 'signin' ? 'Sign In with Phone' : 'Create Account'}
                 </Text>
               )}
             </Pressable>
 
-            {/* Privacy note */}
+            {/* Switch mode prompt */}
+            <Pressable
+              style={local.switchPromptBtn}
+              onPress={() => {
+                setMode(mode === 'signin' ? 'signup' : 'signin');
+                setErrorMessage(null);
+                setSuccessMessage(null);
+              }}
+            >
+              <Text style={[local.switchPromptText, { color: colors.mutedForeground }]}>
+                {mode === 'signin' ? "Don't have an account? " : 'Already registered? '}
+                <Text style={{ color: colors.primary, fontWeight: '700' }}>
+                  {mode === 'signin' ? 'Sign Up' : 'Sign In'}
+                </Text>
+              </Text>
+            </Pressable>
+
+            {/* Security note */}
             <Text style={[local.footerNote, { color: colors.mutedForeground }]}>
-              🔐 Private & secure. Your daily journal entries are encrypted and private to you.
+              🔐 Instant access with no email verification required. Your daily log is private to you.
             </Text>
           </KeyboardAwareScrollViewCompat>
         </View>
@@ -251,7 +272,7 @@ export function AuthModal({ visible, onClose, initialMode = 'signin' }: AuthModa
 const local = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(18, 25, 23, 0.6)',
+    backgroundColor: 'rgba(15, 20, 18, 0.65)',
     justifyContent: 'flex-end',
     ...(Platform.OS === 'web' ? { alignItems: 'center', justifyContent: 'center' } : {}),
   },
@@ -262,9 +283,7 @@ const local = StyleSheet.create({
     borderTopRightRadius: 28,
     borderWidth: 1,
     padding: 24,
-    ...(Platform.OS === 'web'
-      ? { maxWidth: 460, borderRadius: 28, maxHeight: '85%' }
-      : {}),
+    ...(Platform.OS === 'web' ? { maxWidth: 480, borderRadius: 28, maxHeight: '85%' } : {}),
   },
   header: {
     flexDirection: 'row',
@@ -281,7 +300,8 @@ const local = StyleSheet.create({
   title: {
     fontFamily: 'Georgia',
     fontSize: 24,
-    marginTop: 4,
+    fontWeight: '700',
+    marginTop: 2,
   },
   closeBtn: {
     width: 36,
@@ -304,9 +324,9 @@ const local = StyleSheet.create({
   },
   tabActive: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
-    shadowRadius: 2,
+    shadowRadius: 4,
     elevation: 2,
   },
   tabText: {
@@ -322,18 +342,36 @@ const local = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: '600',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
     borderRadius: 14,
-    paddingHorizontal: 12,
-    height: 50,
+    paddingHorizontal: 14,
+    height: 48,
   },
   inputIcon: {
     marginRight: 10,
+  },
+  countryPrefix: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  flagIcon: {
+    fontSize: 16,
+    marginRight: 4,
+  },
+  countryCode: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  prefixDivider: {
+    width: 1,
+    height: 18,
+    marginLeft: 10,
   },
   input: {
     flex: 1,
@@ -351,26 +389,33 @@ const local = StyleSheet.create({
   messageText: {
     flex: 1,
     fontSize: 13,
-    fontWeight: '500',
+    lineHeight: 18,
   },
   submitButton: {
-    height: 52,
-    borderRadius: 26,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 6,
-    marginBottom: 14,
+    marginTop: 8,
+    marginBottom: 12,
   },
   submitText: {
     fontSize: 15,
     fontWeight: '700',
-    letterSpacing: 0.3,
+  },
+  switchPromptBtn: {
+    alignItems: 'center',
+    paddingVertical: 8,
+    marginBottom: 12,
+  },
+  switchPromptText: {
+    fontSize: 13,
   },
   footerNote: {
-    textAlign: 'center',
     fontSize: 12,
-    lineHeight: 18,
+    textAlign: 'center',
+    lineHeight: 17,
     marginTop: 4,
-    marginBottom: 10,
+    marginBottom: 8,
   },
 });

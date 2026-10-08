@@ -161,7 +161,9 @@ export default function SettingsScreen() {
               <Text style={[local.userName, { color: colors.foreground }]}>
                 {profile?.fullName || 'Journaler'}
               </Text>
-              <Text style={[ui.muted, { color: colors.mutedForeground }]}>{user?.email}</Text>
+              <Text style={[ui.muted, { color: colors.mutedForeground }]}>
+                {profile?.phoneNumber || (user?.email && !user.email.includes('@phone.local') && !user.email.includes('@daily-log.internal') ? user.email : 'Mobile Account')}
+              </Text>
               <Text style={[local.memberText, { color: colors.mutedForeground }]}>
                 Member since {memberSince}
               </Text>

@@ -6,9 +6,19 @@ import { getSupabase, isSupabaseConfigured, loadStoredSupabaseConfig } from '@/l
 export interface UserProfile {
   id: string;
   email: string;
+  phoneNumber?: string;
   fullName: string;
   avatarUrl?: string;
   createdAt?: string;
+}
+
+interface StoredAccount {
+  id: string;
+  phone10: string;
+  formattedPhone: string;
+  fullName: string;
+  password: string;
+  createdAt: string;
 }
 
 interface AuthContextValue {
@@ -16,14 +26,26 @@ interface AuthContextValue {
   session: Session | null;
   profile: UserProfile | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error?: string }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error?: string; message?: string }>;
+  signIn: (phone: string, password: string) => Promise<{ error?: string }>;
+  signUp: (phone: string, password: string, fullName: string) => Promise<{ error?: string; message?: string }>;
   signOut: () => Promise<void>;
   updateProfile: (fullName: string) => Promise<{ error?: string }>;
   deleteAccount: () => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+const LOCAL_ACCOUNTS_KEY = '@daily-log/registered-accounts';
+const LOCAL_CURRENT_USER_KEY = '@daily-log/current-user';
+
+async function getStoredAccounts(): Promise<Record<string, StoredAccount>> {
+  try {
+    const raw = await AsyncStorage.getItem(LOCAL_ACCOUNTS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -37,16 +59,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await loadStoredSupabaseConfig();
       const supabase = getSupabase();
 
-      const { data, error } = await supabase.auth.getSession();
-      if (!error && data?.session) {
-        setSession(data.session);
-        setUser(data.session.user);
-        await loadUserProfile(data.session.user);
-      } else {
-        setSession(null);
-        setUser(null);
-        setProfile(null);
+      // 1. Check Supabase session first
+      if (isSupabaseConfigured()) {
+        try {
+          const { data, error } = await supabase.auth.getSession();
+          if (!error && data?.session?.user) {
+            setSession(data.session);
+            setUser(data.session.user);
+            await loadUserProfile(data.session.user);
+            return;
+          }
+        } catch {}
       }
+
+      // 2. Check local stored user
+      const rawUser = await AsyncStorage.getItem(LOCAL_CURRENT_USER_KEY);
+      if (rawUser) {
+        const stored = JSON.parse(rawUser) as StoredAccount;
+        const fakeUser = {
+          id: stored.id,
+          email: `${stored.phone10}@phone.local`,
+          created_at: stored.createdAt,
+          user_metadata: {
+            full_name: stored.fullName,
+            phone_number: stored.formattedPhone,
+          },
+        } as unknown as User;
+
+        setUser(fakeUser);
+        setProfile({
+          id: stored.id,
+          email: `${stored.phone10}@phone.local`,
+          phoneNumber: stored.formattedPhone,
+          fullName: stored.fullName,
+          createdAt: stored.createdAt,
+        });
+        return;
+      }
+
+      // Not logged in
+      setSession(null);
+      setUser(null);
+      setProfile(null);
     } catch (error) {
       console.warn('Error initializing auth', error);
       setUser(null);
@@ -66,30 +120,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', currentUser.id)
         .maybeSingle();
 
+      const phoneMeta = currentUser.user_metadata?.phone_number || '';
       const fallbackName =
         currentUser.user_metadata?.full_name ||
-        (currentUser.email ? currentUser.email.split('@')[0] : 'Journaler');
+        (phoneMeta ? `User ${phoneMeta.slice(-4)}` : 'Journaler');
 
       if (data && !error) {
         setProfile({
           id: data.id,
           email: data.email ?? currentUser.email ?? '',
+          phoneNumber: data.phone_number || phoneMeta,
           fullName: data.full_name || fallbackName,
           avatarUrl: data.avatar_url ?? undefined,
           createdAt: data.created_at ?? currentUser.created_at,
         });
       } else {
-        // Auto-heal: create profile row in Supabase
         const newProfile = {
           id: currentUser.id,
           email: currentUser.email ?? '',
           full_name: fallbackName,
+          phone_number: phoneMeta,
         };
         await supabase.from('profiles').upsert(newProfile, { onConflict: 'id' });
 
         setProfile({
           id: currentUser.id,
           email: currentUser.email ?? '',
+          phoneNumber: phoneMeta,
           fullName: fallbackName,
           createdAt: currentUser.created_at,
         });
@@ -98,6 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile({
         id: currentUser.id,
         email: currentUser.email ?? '',
+        phoneNumber: currentUser.user_metadata?.phone_number || '',
         fullName: currentUser.user_metadata?.full_name ?? 'Journaler',
         createdAt: currentUser.created_at,
       });
@@ -110,12 +168,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const supabase = getSupabase();
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, newSession) => {
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
         if (newSession?.user) {
+          setSession(newSession);
+          setUser(newSession.user);
           await loadUserProfile(newSession.user);
-        } else {
-          setProfile(null);
         }
       }
     );
@@ -125,24 +181,83 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const signIn = async (email: string, password: string): Promise<{ error?: string }> => {
+  const signIn = async (phone: string, password: string): Promise<{ error?: string }> => {
     try {
       setIsLoading(true);
-      const supabase = getSupabase();
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
+
+      const cleanPhone = phone.replace(/\D/g, '');
+      if (cleanPhone.length < 10) {
+        return { error: 'Please enter a valid 10-digit phone number.' };
+      }
+      const phone10 = cleanPhone.slice(-10);
+      const authEmail = `p${phone10}@daily-log.internal`;
+
+      // 1. Try Supabase Authentication if configured
+      if (isSupabaseConfigured()) {
+        const supabase = getSupabase();
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: authEmail,
+          password,
+        });
+
+        if (data?.session && data?.user && !error) {
+          setSession(data.session);
+          setUser(data.user);
+          await loadUserProfile(data.user);
+
+          // Sync local account cache
+          const accounts = await getStoredAccounts();
+          const existing = accounts[phone10];
+          const syncAccount: StoredAccount = {
+            id: data.user.id,
+            phone10,
+            formattedPhone: existing?.formattedPhone || `+91 ${phone10}`,
+            fullName: data.user.user_metadata?.full_name || existing?.fullName || 'Journaler',
+            password,
+            createdAt: data.user.created_at || new Date().toISOString(),
+          };
+          accounts[phone10] = syncAccount;
+          await AsyncStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify(accounts));
+          await AsyncStorage.setItem(LOCAL_CURRENT_USER_KEY, JSON.stringify(syncAccount));
+          return {};
+        }
+      }
+
+      // 2. Check Local Registered Accounts
+      const accounts = await getStoredAccounts();
+      const account = accounts[phone10];
+
+      if (!account) {
+        return {
+          error: 'This phone number is not registered yet. Please create an account / sign up first.',
+        };
+      }
+
+      if (account.password !== password) {
+        return { error: 'Incorrect password. Please try again.' };
+      }
+
+      // Successful local sign in
+      const fakeUser = {
+        id: account.id,
+        email: `${phone10}@phone.local`,
+        created_at: account.createdAt,
+        user_metadata: {
+          full_name: account.fullName,
+          phone_number: account.formattedPhone,
+        },
+      } as unknown as User;
+
+      setUser(fakeUser);
+      setProfile({
+        id: account.id,
+        email: `${phone10}@phone.local`,
+        phoneNumber: account.formattedPhone,
+        fullName: account.fullName,
+        createdAt: account.createdAt,
       });
 
-      if (error) {
-        return { error: error.message };
-      }
-
-      setSession(data.session);
-      setUser(data.user);
-      if (data.user) {
-        await loadUserProfile(data.user);
-      }
+      await AsyncStorage.setItem(LOCAL_CURRENT_USER_KEY, JSON.stringify(account));
       return {};
     } catch (err: unknown) {
       return { error: err instanceof Error ? err.message : 'Sign in failed' };
@@ -152,35 +267,103 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (
-    email: string,
+    phone: string,
     password: string,
     fullName: string
   ): Promise<{ error?: string; message?: string }> => {
     try {
       setIsLoading(true);
-      const supabase = getSupabase();
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
+
+      const cleanPhone = phone.replace(/\D/g, '');
+      if (cleanPhone.length < 10) {
+        return { error: 'Please enter a valid 10-digit mobile number.' };
+      }
+      if (password.length < 6) {
+        return { error: 'Password must be at least 6 characters.' };
+      }
+      if (!fullName.trim()) {
+        return { error: 'Please enter your full name.' };
+      }
+
+      const phone10 = cleanPhone.slice(-10);
+      const formattedPhone = `+91 ${phone10}`;
+      const authEmail = `p${phone10}@daily-log.internal`;
+
+      const accounts = await getStoredAccounts();
+      if (accounts[phone10]) {
+        return { error: 'An account with this phone number already exists. Please sign in.' };
+      }
+
+      const userId = `usr_${phone10}_${Date.now()}`;
+      let assignedId = userId;
+
+      // 1. Register with Supabase if configured
+      if (isSupabaseConfigured()) {
+        try {
+          const supabase = getSupabase();
+
+          // Try RPC signup_with_phone (direct creation with confirmed email)
+          const { data: rpcData, error: rpcError } = await supabase.rpc('signup_with_phone', {
+            p_phone: phone10,
+            p_password: password,
+            p_full_name: fullName.trim(),
+          });
+
+          if (!rpcError && rpcData?.success && rpcData?.user_id) {
+            assignedId = rpcData.user_id;
+            // Immediate sign in
+            const { data: signData } = await supabase.auth.signInWithPassword({
+              email: authEmail,
+              password,
+            });
+            if (signData?.session && signData?.user) {
+              setSession(signData.session);
+              setUser(signData.user);
+              await loadUserProfile(signData.user);
+            }
+          }
+        } catch (err) {
+          console.warn('Supabase cloud signup attempt deferred to local persistence', err);
+        }
+      }
+
+      // 2. Persist account
+      const newAccount: StoredAccount = {
+        id: assignedId,
+        phone10,
+        formattedPhone,
+        fullName: fullName.trim(),
         password,
-        options: {
-          data: {
-            full_name: fullName.trim(),
+        createdAt: new Date().toISOString(),
+      };
+
+      accounts[phone10] = newAccount;
+      await AsyncStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify(accounts));
+      await AsyncStorage.setItem(LOCAL_CURRENT_USER_KEY, JSON.stringify(newAccount));
+
+      // 3. Set local user state if Supabase didn't already
+      if (!user) {
+        const fakeUser = {
+          id: assignedId,
+          email: `${phone10}@phone.local`,
+          created_at: newAccount.createdAt,
+          user_metadata: {
+            full_name: newAccount.fullName,
+            phone_number: formattedPhone,
           },
-        },
-      });
+        } as unknown as User;
 
-      if (error) {
-        return { error: error.message };
+        setUser(fakeUser);
+        setProfile({
+          id: assignedId,
+          email: `${phone10}@phone.local`,
+          phoneNumber: formattedPhone,
+          fullName: newAccount.fullName,
+          createdAt: newAccount.createdAt,
+        });
       }
 
-      if (data.session && data.user) {
-        setSession(data.session);
-        setUser(data.user);
-        await loadUserProfile(data.user);
-        return { message: 'Account created successfully!' };
-      } else {
-        return { message: 'Please check your email to confirm your account, then sign in.' };
-      }
+      return { message: 'Account created successfully! Welcome to Daily Log.' };
     } catch (err: unknown) {
       return { error: err instanceof Error ? err.message : 'Sign up failed' };
     } finally {
@@ -189,20 +372,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateProfile = async (fullName: string): Promise<{ error?: string }> => {
-    if (!user) return { error: 'Not authenticated' };
+    if (!profile) return { error: 'Not authenticated' };
     try {
       const trimmed = fullName.trim();
-      const supabase = getSupabase();
+      if (!trimmed) return { error: 'Name cannot be empty' };
 
-      // Update Supabase profile table
-      await supabase
-        .from('profiles')
-        .upsert({ id: user.id, full_name: trimmed, email: user.email }, { onConflict: 'id' });
+      // Update Supabase if connected
+      if (isSupabaseConfigured() && user) {
+        try {
+          const supabase = getSupabase();
+          await supabase
+            .from('profiles')
+            .upsert({ id: user.id, full_name: trimmed }, { onConflict: 'id' });
+          await supabase.auth.updateUser({ data: { full_name: trimmed } });
+        } catch {}
+      }
 
-      // Update auth user metadata
-      await supabase.auth.updateUser({
-        data: { full_name: trimmed },
-      });
+      // Update local storage
+      const accounts = await getStoredAccounts();
+      const phone10 = profile.phoneNumber?.replace(/\D/g, '').slice(-10);
+      if (phone10 && accounts[phone10]) {
+        accounts[phone10].fullName = trimmed;
+        await AsyncStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify(accounts));
+        await AsyncStorage.setItem(LOCAL_CURRENT_USER_KEY, JSON.stringify(accounts[phone10]));
+      }
 
       setProfile((prev) => (prev ? { ...prev, fullName: trimmed } : null));
       return {};
@@ -213,8 +406,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      const supabase = getSupabase();
-      await supabase.auth.signOut();
+      if (isSupabaseConfigured()) {
+        const supabase = getSupabase();
+        await supabase.auth.signOut().catch(() => {});
+      }
+      await AsyncStorage.removeItem(LOCAL_CURRENT_USER_KEY);
     } catch (err) {
       console.warn('Sign out error', err);
     } finally {
@@ -225,27 +421,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteAccount = async (): Promise<{ error?: string }> => {
-    if (!user) return { error: 'Not authenticated' };
     try {
-      const supabase = getSupabase();
+      const phone10 = profile?.phoneNumber?.replace(/\D/g, '').slice(-10);
 
-      // 1. Attempt RPC call for cascading delete
-      const { error: rpcError } = await supabase.rpc('delete_user_account');
-
-      // 2. Fallback: delete user records manually if RPC is not available
-      if (rpcError) {
-        await supabase.from('entries').delete().eq('user_id', user.id);
-        await supabase.from('routine_completions').delete().eq('user_id', user.id);
-        await supabase.from('routine_items').delete().eq('user_id', user.id);
-        await supabase.from('weekly_reflections').delete().eq('user_id', user.id);
-        await supabase.from('profiles').delete().eq('id', user.id);
+      // Supabase cascade deletion
+      if (isSupabaseConfigured() && user) {
+        try {
+          const supabase = getSupabase();
+          try {
+            await supabase.rpc('delete_user_account');
+          } catch {
+            await supabase.from('entries').delete().eq('user_id', user.id);
+            await supabase.from('daily_notes').delete().eq('user_id', user.id);
+            await supabase.from('routine_completions').delete().eq('user_id', user.id);
+            await supabase.from('routine_items').delete().eq('user_id', user.id);
+            await supabase.from('profiles').delete().eq('id', user.id);
+          }
+          await supabase.auth.signOut();
+        } catch {}
       }
 
-      // 3. Clear local storage
-      await AsyncStorage.clear();
+      // Remove local account
+      if (phone10) {
+        const accounts = await getStoredAccounts();
+        delete accounts[phone10];
+        await AsyncStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify(accounts));
+      }
 
-      // 4. Sign out session
-      await supabase.auth.signOut();
+      await AsyncStorage.removeItem(LOCAL_CURRENT_USER_KEY);
+      await AsyncStorage.clear();
 
       setUser(null);
       setSession(null);

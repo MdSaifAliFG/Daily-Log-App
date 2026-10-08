@@ -13,11 +13,13 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   email TEXT,
+  phone_number TEXT,
   full_name TEXT,
   avatar_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone_number TEXT;
 
 -- 3. Daily Journal Entries Table
 CREATE TABLE IF NOT EXISTS public.entries (
@@ -135,14 +137,17 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   -- 1. Create public profile
-  INSERT INTO public.profiles (id, email, full_name, avatar_url)
+  INSERT INTO public.profiles (id, email, phone_number, full_name, avatar_url)
   VALUES (
     NEW.id,
     NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'phone_number', ''),
     COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
     COALESCE(NEW.raw_user_meta_data->>'avatar_url', '')
   )
-  ON CONFLICT (id) DO NOTHING;
+  ON CONFLICT (id) DO UPDATE SET
+    phone_number = COALESCE(EXCLUDED.phone_number, public.profiles.phone_number),
+    full_name = COALESCE(EXCLUDED.full_name, public.profiles.full_name);
 
   -- 2. Seed starter routine items for the new user
   INSERT INTO public.routine_items (user_id, name, sort_order)
@@ -176,4 +181,81 @@ BEGIN
   DELETE FROM auth.users WHERE id = auth.uid();
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth;
+
+-- ==============================================================================
+-- 9. PHONE SIGNUP RPC (Bypasses email verification & SMTP rate-limits)
+-- Creates an account directly with confirmed status using phone number
+-- ==============================================================================
+CREATE OR REPLACE FUNCTION public.signup_with_phone(
+  p_phone TEXT,
+  p_password TEXT,
+  p_full_name TEXT
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth, extensions
+AS $$
+DECLARE
+  v_user_id UUID;
+  v_clean_phone TEXT;
+  v_email TEXT;
+  v_encrypted_pw TEXT;
+BEGIN
+  v_clean_phone := regexp_replace(p_phone, '[^0-9]', '', 'g');
+  IF length(v_clean_phone) < 10 THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Please enter a valid 10-digit mobile number');
+  END IF;
+
+  v_clean_phone := right(v_clean_phone, 10);
+  v_email := 'p' || v_clean_phone || '@daily-log.internal';
+
+  -- Check if user already exists
+  IF EXISTS (SELECT 1 FROM auth.users WHERE email = v_email) THEN
+    RETURN jsonb_build_object('success', false, 'error', 'An account with this phone number already exists. Please sign in.');
+  END IF;
+
+  v_user_id := gen_random_uuid();
+  v_encrypted_pw := crypt(p_password, gen_salt('bf'));
+
+  -- Insert directly into auth.users with email_confirmed_at = NOW() (NO email sent!)
+  INSERT INTO auth.users (
+    instance_id,
+    id,
+    aud,
+    role,
+    email,
+    encrypted_password,
+    email_confirmed_at,
+    raw_app_meta_data,
+    raw_user_meta_data,
+    created_at,
+    updated_at
+  ) VALUES (
+    '00000000-0000-0000-0000-000000000000',
+    v_user_id,
+    'authenticated',
+    'authenticated',
+    v_email,
+    v_encrypted_pw,
+    NOW(),
+    '{"provider":"phone","providers":["phone"]}'::jsonb,
+    jsonb_build_object('full_name', p_full_name, 'phone_number', '+91 ' || v_clean_phone),
+    NOW(),
+    NOW()
+  );
+
+  -- Insert profile
+  INSERT INTO public.profiles (id, email, phone_number, full_name)
+  VALUES (v_user_id, v_email, '+91 ' || v_clean_phone, p_full_name)
+  ON CONFLICT (id) DO UPDATE SET
+    full_name = EXCLUDED.full_name,
+    phone_number = EXCLUDED.phone_number;
+
+  RETURN jsonb_build_object('success', true, 'user_id', v_user_id);
+EXCEPTION WHEN OTHERS THEN
+  RETURN jsonb_build_object('success', false, 'error', SQLERRM);
+END;
+$$;
+
 

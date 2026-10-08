@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Modal,
   Platform,
   Pressable,
   RefreshControl,
@@ -9,11 +8,12 @@ import {
   View,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import * as Haptics from 'expo-haptics';
+import { IndiaCalendarModal } from '@/components/IndiaCalendarModal';
+import { getIndianHoliday } from '@/lib/holidaysIndia';
 import {
   Button,
   Card,
@@ -152,6 +152,8 @@ export default function TodayScreen() {
     return `Good evening${name}`;
   }, [profile]);
 
+  const holidayToday = useMemo(() => getIndianHoliday(date), [date]);
+
   if (dailyQuery.isLoading && !dailyQuery.data) {
     return (
       <Page>
@@ -182,8 +184,15 @@ export default function TodayScreen() {
               {isToday ? greeting : 'Looking back'}
             </Text>
             <Text style={[local.date, { color: colors.foreground }]}>{displayDate(date)}</Text>
+            {holidayToday ? (
+              <View style={[local.holidayHeaderBadge, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
+                <Text style={local.holidayEmoji}>{holidayToday.emoji}</Text>
+                <Text style={[local.holidayText, { color: colors.foreground }]}>
+                  {holidayToday.name} · {holidayToday.type} Holiday
+                </Text>
+              </View>
+            ) : null}
           </View>
-          <IconButton icon="settings" label="Open settings" onPress={() => router.push('/settings')} />
         </View>
 
         {/* Date Navigation Bar */}
@@ -195,7 +204,7 @@ export default function TodayScreen() {
           />
           <IconButton
             icon="calendar"
-            label="Choose a date"
+            label="Live Indian calendar with holidays"
             onPress={() => setShowDatePicker(true)}
             tint={colors.primary}
           />
@@ -211,25 +220,13 @@ export default function TodayScreen() {
           />
         </View>
 
-        {/* Date Picker Modal for Mobile */}
-        {showDatePicker && Platform.OS !== 'web' ? (
-          <Modal transparent animationType="fade" visible onRequestClose={() => setShowDatePicker(false)}>
-            <View style={local.pickerBackdrop}>
-              <View style={[local.pickerCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Text style={[ui.eyebrow, { color: colors.primary }]}>Choose a day</Text>
-                <DateTimePicker
-                  value={parseIso(date)}
-                  mode="date"
-                  display="spinner"
-                  onChange={(_, selected) => {
-                    if (selected) changeDate(iso(selected));
-                  }}
-                />
-                <Button title="Done" onPress={() => setShowDatePicker(false)} />
-              </View>
-            </View>
-          </Modal>
-        ) : null}
+        {/* Live Indian Calendar Modal */}
+        <IndiaCalendarModal
+          visible={showDatePicker}
+          selectedDate={date}
+          onSelectDate={changeDate}
+          onClose={() => setShowDatePicker(false)}
+        />
 
         {/* 1. Daily Journal Card */}
         <Card>
@@ -503,18 +500,22 @@ const local = StyleSheet.create({
     lineHeight: 27,
     marginTop: 7,
   },
-  pickerBackdrop: {
-    flex: 1,
+  holidayHeaderBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(20,30,25,0.35)',
-    padding: 22,
-  },
-  pickerCard: {
-    width: '100%',
-    borderRadius: 22,
-    padding: 20,
-    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
     borderWidth: 1,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  holidayEmoji: {
+    fontSize: 14,
+  },
+  holidayText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
