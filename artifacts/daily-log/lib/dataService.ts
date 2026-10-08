@@ -98,12 +98,16 @@ export async function fetchDailyLog(date: string, userId?: string | null): Promi
   if (useCloud && userId) {
     try {
       // 1. Fetch Entry
-      const { data: entryData } = await supabase
+      const { data: entryData, error: entryError } = await supabase
         .from('entries')
         .select('*')
         .eq('user_id', userId)
         .eq('date', date)
         .maybeSingle();
+
+      if (entryError && entryError.code !== 'PGRST116') {
+        throw entryError;
+      }
 
       // 2. Fetch Active Routines
       const { data: routinesData } = await supabase
@@ -151,8 +155,10 @@ export async function fetchDailyLog(date: string, userId?: string | null): Promi
           }
         : null;
 
-      // Cache locally for offline viewing
-      await AsyncStorage.setItem(`${LOCAL_ENTRIES_KEY}_${date}`, JSON.stringify(entry));
+      // Cache locally for offline viewing if entry was found
+      if (entry) {
+        await AsyncStorage.setItem(`${LOCAL_ENTRIES_KEY}_${date}`, JSON.stringify(entry));
+      }
 
       return {
         date,
