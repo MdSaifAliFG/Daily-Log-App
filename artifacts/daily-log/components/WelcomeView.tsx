@@ -10,16 +10,14 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
-import { useAuth } from '@/contexts/AuthContext';
 import { AuthModal } from './AuthModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function WelcomeView() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { continueAsGuest, isConfigured } = useAuth();
   const [authVisible, setAuthVisible] = useState(false);
-  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signup');
 
   return (
     <View style={[local.container, { backgroundColor: colors.background }]}>
@@ -27,8 +25,8 @@ export function WelcomeView() {
         contentContainerStyle={[
           local.scrollContent,
           {
-            paddingTop: insets.top + (Platform.OS === 'web' ? 40 : 20),
-            paddingBottom: insets.bottom + 30,
+            paddingTop: insets.top + (Platform.OS === 'web' ? 40 : 24),
+            paddingBottom: insets.bottom + 36,
           },
         ]}
         showsVerticalScrollIndicator={false}
@@ -41,18 +39,6 @@ export function WelcomeView() {
               style={local.logoImage}
               resizeMode="contain"
             />
-          </View>
-
-          <View style={[local.statusPill, { backgroundColor: isConfigured ? colors.secondary : colors.muted }]}>
-            <View
-              style={[
-                local.statusDot,
-                { backgroundColor: isConfigured ? '#35564f' : colors.primary },
-              ]}
-            />
-            <Text style={[local.statusText, { color: isConfigured ? colors.secondaryForeground : colors.foreground }]}>
-              {isConfigured ? 'Supabase Sync Ready' : 'Offline / Guest Ready'}
-            </Text>
           </View>
 
           <Text style={[local.appName, { color: colors.foreground }]}>Daily Log</Text>
@@ -78,13 +64,13 @@ export function WelcomeView() {
           <FeatureCard
             icon="trending-up"
             title="Weekly & Monthly Rhythm"
-            description="Notice patterns without pressure: streaks, completion percentages, and quiet weekly reflections."
+            description="Notice patterns without pressure: streaks, completion percentages, and quiet reflections."
             colors={colors}
           />
           <FeatureCard
             icon="shield"
-            title="Supabase Cloud & Offline Resilient"
-            description="Zero-crash offline local storage with seamless Supabase cloud sync whenever you're ready."
+            title="Private & Encrypted Sync"
+            description="Your daily thoughts and personal records are encrypted and accessible only to you."
             colors={colors}
           />
         </View>
@@ -97,13 +83,13 @@ export function WelcomeView() {
               { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
             ]}
             onPress={() => {
-              setAuthMode('signin');
+              setAuthMode('signup');
               setAuthVisible(true);
             }}
           >
-            <Feather name="log-in" size={18} color={colors.primaryForeground} style={local.btnIcon} />
+            <Feather name="user-plus" size={18} color={colors.primaryForeground} style={local.btnIcon} />
             <Text style={[local.primaryBtnText, { color: colors.primaryForeground }]}>
-              Sign In or Create Account
+              Get Started — Create Account
             </Text>
           </Pressable>
 
@@ -112,16 +98,19 @@ export function WelcomeView() {
               local.secondaryBtn,
               { backgroundColor: colors.secondary, borderColor: colors.border, opacity: pressed ? 0.75 : 1 },
             ]}
-            onPress={continueAsGuest}
+            onPress={() => {
+              setAuthMode('signin');
+              setAuthVisible(true);
+            }}
           >
-            <Feather name="arrow-right" size={18} color={colors.secondaryForeground} style={local.btnIcon} />
+            <Feather name="log-in" size={18} color={colors.secondaryForeground} style={local.btnIcon} />
             <Text style={[local.secondaryBtnText, { color: colors.secondaryForeground }]}>
-              Continue as Guest (No Account Required)
+              I already have an account — Sign In
             </Text>
           </Pressable>
 
           <Text style={[local.privacyNote, { color: colors.mutedForeground }]}>
-            💡 You can switch between Guest and Supabase account anytime in Settings.
+            🔒 Fully private & secure. Your words belong only to you.
           </Text>
         </View>
       </ScrollView>
@@ -193,24 +182,6 @@ const local = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 24,
-  },
-  statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 20,
-    marginBottom: 14,
-  },
-  statusDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
   },
   appName: {
     fontFamily: 'Georgia',

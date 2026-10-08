@@ -22,7 +22,7 @@ export default function RoutineScreen() {
   const { user } = useAuth();
 
   const routineQuery = useQuery({
-    queryKey: ['routine-items', user?.id ?? 'guest'],
+    queryKey: ['routine-items', user?.id ?? 'user'],
     queryFn: () => fetchRoutineItems(user?.id),
     staleTime: 1000 * 60 * 5,
   });

@@ -32,7 +32,7 @@ const queryClient = new QueryClient({
 });
 
 function RootLayoutNav() {
-  const { user, isGuest, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const colors = useColors();
 
   if (isLoading) {
@@ -43,8 +43,8 @@ function RootLayoutNav() {
     );
   }
 
-  // If user is not signed in and has not chosen Guest mode, display the Landing / Welcome screen
-  if (!user && !isGuest) {
+  // If user is not signed in, display the Landing / Welcome screen
+  if (!user) {
     return <WelcomeView />;
   }
 

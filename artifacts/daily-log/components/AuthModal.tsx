@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Platform,
   Pressable,
@@ -23,7 +22,7 @@ interface AuthModalProps {
 
 export function AuthModal({ visible, onClose, initialMode = 'signin' }: AuthModalProps) {
   const colors = useColors();
-  const { signIn, signUp, isConfigured } = useAuth();
+  const { signIn, signUp } = useAuth();
 
   const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
   const [email, setEmail] = useState('');
@@ -68,10 +67,10 @@ export function AuthModal({ visible, onClose, initialMode = 'signin' }: AuthModa
         if (result.error) {
           setErrorMessage(result.error);
         } else {
-          setSuccessMessage(result.message || 'Account created! Signing you in...');
+          setSuccessMessage(result.message || 'Account created successfully!');
           setTimeout(() => {
             onClose();
-          }, 1500);
+          }, 1200);
         }
       }
     } catch (err: unknown) {
@@ -104,15 +103,6 @@ export function AuthModal({ visible, onClose, initialMode = 'signin' }: AuthModa
             </Pressable>
           </View>
 
-          {!isConfigured && (
-            <View style={[local.warningBox, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
-              <Feather name="info" size={16} color={colors.primary} />
-              <Text style={[local.warningText, { color: colors.secondaryForeground }]}>
-                Supabase keys not detected yet. You can still test in offline guest mode or enter your keys in Settings.
-              </Text>
-            </View>
-          )}
-
           {/* Mode Switch Tabs */}
           <View style={[local.tabBar, { backgroundColor: colors.muted }]}>
             <Pressable
@@ -123,6 +113,7 @@ export function AuthModal({ visible, onClose, initialMode = 'signin' }: AuthModa
               onPress={() => {
                 setMode('signin');
                 setErrorMessage(null);
+                setSuccessMessage(null);
               }}
             >
               <Text
@@ -144,6 +135,7 @@ export function AuthModal({ visible, onClose, initialMode = 'signin' }: AuthModa
               onPress={() => {
                 setMode('signup');
                 setErrorMessage(null);
+                setSuccessMessage(null);
               }}
             >
               <Text
@@ -240,14 +232,14 @@ export function AuthModal({ visible, onClose, initialMode = 'signin' }: AuthModa
                 <ActivityIndicator color={colors.primaryForeground} size="small" />
               ) : (
                 <Text style={[local.submitText, { color: colors.primaryForeground }]}>
-                  {mode === 'signin' ? 'Sign In with Supabase' : 'Create Free Account'}
+                  {mode === 'signin' ? 'Sign In' : 'Create Free Account'}
                 </Text>
               )}
             </Pressable>
 
             {/* Privacy note */}
             <Text style={[local.footerNote, { color: colors.mutedForeground }]}>
-              🔐 Backed by Supabase Row-Level Security. Your daily thoughts are encrypted and private to you.
+              🔐 Private & secure. Your daily journal entries are encrypted and private to you.
             </Text>
           </KeyboardAwareScrollViewCompat>
         </View>
@@ -297,20 +289,6 @@ const local = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  warningBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
-  warningText: {
-    flex: 1,
-    fontSize: 12,
-    lineHeight: 17,
   },
   tabBar: {
     flexDirection: 'row',

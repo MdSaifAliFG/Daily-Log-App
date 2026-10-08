@@ -3,27 +3,24 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, Session } from '@supabase/supabase-js';
 import { getSupabase, isSupabaseConfigured, loadStoredSupabaseConfig } from '@/lib/supabase';
 
-const GUEST_KEY = '@daily-log/is-guest';
-
 export interface UserProfile {
   id: string;
   email: string;
   fullName: string;
   avatarUrl?: string;
+  createdAt?: string;
 }
 
 interface AuthContextValue {
   user: User | null;
   session: Session | null;
   profile: UserProfile | null;
-  isGuest: boolean;
   isLoading: boolean;
-  isConfigured: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error?: string; message?: string }>;
   signOut: () => Promise<void>;
-  continueAsGuest: () => Promise<void>;
-  reloadConfig: () => Promise<void>;
+  updateProfile: (fullName: string) => Promise<{ error?: string }>;
+  deleteAccount: () => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -32,37 +29,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isGuest, setIsGuest] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isConfigured, setIsConfigured] = useState<boolean>(false);
 
   const initAuth = async () => {
     try {
       setIsLoading(true);
       await loadStoredSupabaseConfig();
-      const configured = isSupabaseConfigured();
-      setIsConfigured(configured);
+      const supabase = getSupabase();
 
-      // Check guest mode preference
-      const guestStored = await AsyncStorage.getItem(GUEST_KEY);
-      if (guestStored === 'true') {
-        setIsGuest(true);
-      }
-
-      if (configured) {
-        const supabase = getSupabase();
-        const { data } = await supabase.auth.getSession();
+      const { data, error } = await supabase.auth.getSession();
+      if (!error && data?.session) {
         setSession(data.session);
-        setUser(data.session?.user ?? null);
-        if (data.session?.user) {
-          setIsGuest(false);
-          await loadUserProfile(data.session.user);
-        }
+        setUser(data.session.user);
+        await loadUserProfile(data.session.user);
+      } else {
+        setSession(null);
+        setUser(null);
+        setProfile(null);
       }
     } catch (error) {
       console.warn('Error initializing auth', error);
-      // Fallback to guest mode on error so user is never blocked
-      setIsGuest(true);
+      setUser(null);
+      setSession(null);
+      setProfile(null);
     } finally {
       setIsLoading(false);
     }
@@ -75,20 +64,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('profiles')
         .select('*')
         .eq('id', currentUser.id)
-        .single();
+        .maybeSingle();
+
+      const fallbackName =
+        currentUser.user_metadata?.full_name ||
+        (currentUser.email ? currentUser.email.split('@')[0] : 'Journaler');
 
       if (data && !error) {
         setProfile({
           id: data.id,
           email: data.email ?? currentUser.email ?? '',
-          fullName: data.full_name ?? currentUser.user_metadata?.full_name ?? 'Journaler',
+          fullName: data.full_name || fallbackName,
           avatarUrl: data.avatar_url ?? undefined,
+          createdAt: data.created_at ?? currentUser.created_at,
         });
       } else {
+        // Auto-heal: create profile row in Supabase
+        const newProfile = {
+          id: currentUser.id,
+          email: currentUser.email ?? '',
+          full_name: fallbackName,
+        };
+        await supabase.from('profiles').upsert(newProfile, { onConflict: 'id' });
+
         setProfile({
           id: currentUser.id,
           email: currentUser.email ?? '',
-          fullName: currentUser.user_metadata?.full_name ?? (currentUser.email ? currentUser.email.split('@')[0] : 'Journaler'),
+          fullName: fallbackName,
+          createdAt: currentUser.created_at,
         });
       }
     } catch {
@@ -96,6 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: currentUser.id,
         email: currentUser.email ?? '',
         fullName: currentUser.user_metadata?.full_name ?? 'Journaler',
+        createdAt: currentUser.created_at,
       });
     }
   };
@@ -103,36 +107,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     void initAuth();
 
-    if (isSupabaseConfigured()) {
-      const supabase = getSupabase();
-      const { data: authListener } = supabase.auth.onAuthStateChange(
-        async (_event, newSession) => {
-          setSession(newSession);
-          setUser(newSession?.user ?? null);
-          if (newSession?.user) {
-            setIsGuest(false);
-            await AsyncStorage.setItem(GUEST_KEY, 'false');
-            await loadUserProfile(newSession.user);
-          } else {
-            setProfile(null);
-          }
+    const supabase = getSupabase();
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (_event, newSession) => {
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        if (newSession?.user) {
+          await loadUserProfile(newSession.user);
+        } else {
+          setProfile(null);
         }
-      );
+      }
+    );
 
-      return () => {
-        authListener.subscription.unsubscribe();
-      };
-    }
-  }, [isConfigured]);
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
   const signIn = async (email: string, password: string): Promise<{ error?: string }> => {
-    if (!isConfigured) {
-      return { error: 'Supabase credentials are not configured yet. You can configure them in Settings or continue as Guest.' };
-    }
     try {
       setIsLoading(true);
       const supabase = getSupabase();
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
@@ -140,8 +137,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         return { error: error.message };
       }
-      setIsGuest(false);
-      await AsyncStorage.setItem(GUEST_KEY, 'false');
+
+      setSession(data.session);
+      setUser(data.user);
+      if (data.user) {
+        await loadUserProfile(data.user);
+      }
       return {};
     } catch (err: unknown) {
       return { error: err instanceof Error ? err.message : 'Sign in failed' };
@@ -150,10 +151,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, fullName: string): Promise<{ error?: string; message?: string }> => {
-    if (!isConfigured) {
-      return { error: 'Supabase credentials are not configured yet. Configure them in Settings first.' };
-    }
+  const signUp = async (
+    email: string,
+    password: string,
+    fullName: string
+  ): Promise<{ error?: string; message?: string }> => {
     try {
       setIsLoading(true);
       const supabase = getSupabase();
@@ -171,9 +173,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: error.message };
       }
 
-      if (data.session) {
-        setIsGuest(false);
-        await AsyncStorage.setItem(GUEST_KEY, 'false');
+      if (data.session && data.user) {
+        setSession(data.session);
+        setUser(data.user);
+        await loadUserProfile(data.user);
         return { message: 'Account created successfully!' };
       } else {
         return { message: 'Please check your email to confirm your account, then sign in.' };
@@ -185,29 +188,72 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signOut = async () => {
+  const updateProfile = async (fullName: string): Promise<{ error?: string }> => {
+    if (!user) return { error: 'Not authenticated' };
     try {
-      if (isConfigured) {
-        const supabase = getSupabase();
-        await supabase.auth.signOut();
-      }
-      setUser(null);
-      setSession(null);
-      setProfile(null);
-      setIsGuest(true);
-      await AsyncStorage.setItem(GUEST_KEY, 'true');
-    } catch (err) {
-      console.warn('Sign out error', err);
+      const trimmed = fullName.trim();
+      const supabase = getSupabase();
+
+      // Update Supabase profile table
+      await supabase
+        .from('profiles')
+        .upsert({ id: user.id, full_name: trimmed, email: user.email }, { onConflict: 'id' });
+
+      // Update auth user metadata
+      await supabase.auth.updateUser({
+        data: { full_name: trimmed },
+      });
+
+      setProfile((prev) => (prev ? { ...prev, fullName: trimmed } : null));
+      return {};
+    } catch (err: unknown) {
+      return { error: err instanceof Error ? err.message : 'Failed to update profile' };
     }
   };
 
-  const continueAsGuest = async () => {
-    setIsGuest(true);
-    await AsyncStorage.setItem(GUEST_KEY, 'true');
+  const signOut = async () => {
+    try {
+      const supabase = getSupabase();
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.warn('Sign out error', err);
+    } finally {
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+    }
   };
 
-  const reloadConfig = async () => {
-    await initAuth();
+  const deleteAccount = async (): Promise<{ error?: string }> => {
+    if (!user) return { error: 'Not authenticated' };
+    try {
+      const supabase = getSupabase();
+
+      // 1. Attempt RPC call for cascading delete
+      const { error: rpcError } = await supabase.rpc('delete_user_account');
+
+      // 2. Fallback: delete user records manually if RPC is not available
+      if (rpcError) {
+        await supabase.from('entries').delete().eq('user_id', user.id);
+        await supabase.from('routine_completions').delete().eq('user_id', user.id);
+        await supabase.from('routine_items').delete().eq('user_id', user.id);
+        await supabase.from('weekly_reflections').delete().eq('user_id', user.id);
+        await supabase.from('profiles').delete().eq('id', user.id);
+      }
+
+      // 3. Clear local storage
+      await AsyncStorage.clear();
+
+      // 4. Sign out session
+      await supabase.auth.signOut();
+
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      return {};
+    } catch (err: unknown) {
+      return { error: err instanceof Error ? err.message : 'Failed to delete account' };
+    }
   };
 
   return (
@@ -216,14 +262,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         session,
         profile,
-        isGuest,
         isLoading,
-        isConfigured,
         signIn,
         signUp,
         signOut,
-        continueAsGuest,
-        reloadConfig,
+        updateProfile,
+        deleteAccount,
       }}
     >
       {children}

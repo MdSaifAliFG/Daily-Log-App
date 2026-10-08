@@ -32,7 +32,7 @@ export default function WeekScreen() {
   const [weekStart, setWeekStart] = useState(startOfWeek(iso(new Date())));
 
   const weekQuery = useQuery({
-    queryKey: ['week-summary', weekStart, user?.id ?? 'guest'],
+    queryKey: ['week-summary', weekStart, user?.id ?? 'user'],
     queryFn: () => fetchWeekSummary(weekStart, user?.id),
     staleTime: 1000 * 60 * 5,
   });
@@ -57,7 +57,7 @@ export default function WeekScreen() {
     mutationFn: () => saveWeekReflection(weekStart, wentWell, improve, user?.id),
     onSuccess: (reflection) => {
       queryClient.setQueryData(
-        ['week-summary', weekStart, user?.id ?? 'guest'],
+        ['week-summary', weekStart, user?.id ?? 'user'],
         (old: any) => (old ? { ...old, reflection } : old)
       );
       setSaved(true);

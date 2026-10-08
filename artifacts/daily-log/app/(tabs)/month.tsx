@@ -19,7 +19,7 @@ export default function MonthScreen() {
   const [month, setMonth] = useState(today.getMonth() + 1);
 
   const monthQuery = useQuery({
-    queryKey: ['month-summary', year, month, user?.id ?? 'guest'],
+    queryKey: ['month-summary', year, month, user?.id ?? 'user'],
     queryFn: () => fetchMonthSummary(year, month, user?.id),
     staleTime: 1000 * 60 * 5,
   });

@@ -471,6 +471,25 @@ export async function fetchRoutineItems(userId?: string | null): Promise<Routine
           sortOrder: r.sort_order,
         }));
       }
+
+      if (data && !error && data.length === 0) {
+        // Auto-seed starter routines for the user
+        const starterPayload = DEFAULT_STARTER_ROUTINES.map((r) => ({
+          user_id: userId,
+          name: r.name,
+          is_active: r.isActive,
+          sort_order: r.sortOrder,
+        }));
+        const { data: seeded } = await supabase.from('routine_items').insert(starterPayload).select();
+        if (seeded && seeded.length > 0) {
+          return seeded.map((r) => ({
+            id: r.id,
+            name: r.name,
+            isActive: r.is_active,
+            sortOrder: r.sort_order,
+          }));
+        }
+      }
     } catch {}
   }
 

@@ -38,14 +38,14 @@ export default function TodayScreen() {
   const router = useRouter();
   const routeParams = useLocalSearchParams<{ date?: string }>();
   const queryClient = useQueryClient();
-  const { user, profile, isConfigured } = useAuth();
+  const { user, profile } = useAuth();
 
   const [date, setDate] = useState(iso(new Date()));
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Load daily log data with fallback
   const dailyQuery = useQuery({
-    queryKey: ['daily-log', date, user?.id ?? 'guest'],
+    queryKey: ['daily-log', date, user?.id ?? 'user'],
     queryFn: () => fetchDailyLog(date, user?.id),
     staleTime: 1000 * 60 * 5,
   });
@@ -85,7 +85,7 @@ export default function TodayScreen() {
       saveDailyEntry(date, data, user?.id),
     onSuccess: (savedEntry) => {
       queryClient.setQueryData(
-        ['daily-log', date, user?.id ?? 'guest'],
+        ['daily-log', date, user?.id ?? 'user'],
         (old: any) => (old ? { ...old, entry: savedEntry } : old)
       );
       queryClient.invalidateQueries({ queryKey: ['week-summary'] });
@@ -178,31 +178,9 @@ export default function TodayScreen() {
         {/* Top Header */}
         <View style={local.header}>
           <View style={local.headerTextWrap}>
-            <View style={local.badgeRow}>
-              <Text style={[ui.eyebrow, { color: colors.primary, marginBottom: 0 }]}>
-                {isToday ? greeting : 'Looking back'}
-              </Text>
-              <View
-                style={[
-                  local.syncPill,
-                  { backgroundColor: isConfigured && user ? colors.secondary : colors.muted },
-                ]}
-              >
-                <Feather
-                  name={isConfigured && user ? 'cloud' : 'hard-drive'}
-                  size={11}
-                  color={isConfigured && user ? colors.primary : colors.mutedForeground}
-                />
-                <Text
-                  style={[
-                    local.syncText,
-                    { color: isConfigured && user ? colors.secondaryForeground : colors.mutedForeground },
-                  ]}
-                >
-                  {isConfigured && user ? 'Supabase' : 'Offline'}
-                </Text>
-              </View>
-            </View>
+            <Text style={[ui.eyebrow, { color: colors.primary, marginBottom: 2 }]}>
+              {isToday ? greeting : 'Looking back'}
+            </Text>
             <Text style={[local.date, { color: colors.foreground }]}>{displayDate(date)}</Text>
           </View>
           <IconButton icon="settings" label="Open settings" onPress={() => router.push('/settings')} />
@@ -276,9 +254,11 @@ export default function TodayScreen() {
                 ? 'Saved just now'
                 : saveMutation.isPending
                 ? 'Saving changes…'
-                : isConfigured && user
-                ? 'Synced with Supabase'
-                : 'Saved locally on device'}
+                : journalText.trim()
+                ? `${journalText.trim().split(/\s+/).filter(Boolean).length} ${
+                    journalText.trim().split(/\s+/).filter(Boolean).length === 1 ? 'word' : 'words'
+                  } · Private to you`
+                : 'Private to you'}
             </Text>
             <Button
               title={saveMutation.isPending ? 'Saving…' : 'Save entry'}
@@ -448,25 +428,6 @@ const local = StyleSheet.create({
   },
   headerTextWrap: {
     flex: 1,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  syncPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  syncText: {
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   date: {
     fontFamily: 'Georgia',
