@@ -97,6 +97,13 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
 
 export function useAppearance() {
   const value = useContext(AppearanceContext);
-  if (!value) throw new Error('useAppearance must be used inside AppearanceProvider');
+  if (!value) {
+    return {
+      mode: 'system' as AppearanceMode,
+      setMode: () => {},
+      isDark: false,
+      toggleTheme: () => {},
+    };
+  }
   return value;
 }

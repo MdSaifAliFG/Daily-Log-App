@@ -75,14 +75,12 @@ export function WelcomeView() {
 
           {/* 2. Hero Logo & Title Section */}
           <View style={local.heroSection}>
-            <View style={local.logoShadowWrap}>
-              <View style={[local.logoContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Image
-                  source={require('@/assets/images/logo.png')}
-                  style={local.logoImage}
-                  resizeMode="cover"
-                />
-              </View>
+            <View style={local.logoContainer}>
+              <Image
+                source={require('@/assets/images/logo.png')}
+                style={local.logoImage}
+                resizeMode="contain"
+              />
             </View>
 
             <Text style={[local.appName, { color: colors.foreground }]}>Daily Log</Text>
@@ -267,22 +265,12 @@ const local = StyleSheet.create({
     marginBottom: 14,
     width: '100%',
   },
-  logoShadowWrap: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 6,
-    marginBottom: 10,
-  },
   logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 22,
-    overflow: 'hidden',
+    width: 86,
+    height: 86,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    marginBottom: 8,
   },
   logoImage: {
     width: '100%',
