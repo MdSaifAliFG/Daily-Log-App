@@ -15,12 +15,10 @@ import { useAppearance } from '@/contexts/AppearanceContext';
  * device's appearance setting.
  */
 export function useColors() {
-  const scheme = useColorScheme();
-  const { mode } = useAppearance();
-  const selectedScheme = mode === 'system' ? scheme : mode;
+  const { isDark } = useAppearance();
   const palette =
-    selectedScheme === 'dark' && 'dark' in colors
+    isDark && 'dark' in colors
       ? (colors as unknown as { dark: typeof colors.light }).dark
       : colors.light;
-  return { ...palette, radius: colors.radius };
+  return { ...palette, radius: colors.radius, isDark };
 }

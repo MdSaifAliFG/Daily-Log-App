@@ -32,6 +32,15 @@ export function AuthModal({ visible, onClose, initialMode = 'signin' }: AuthModa
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Sync mode with initialMode whenever opened
+  React.useEffect(() => {
+    if (visible) {
+      setMode(initialMode);
+      setErrorMessage(null);
+      setSuccessMessage(null);
+    }
+  }, [visible, initialMode]);
+
   const handleSubmit = async () => {
     setErrorMessage(null);
     setSuccessMessage(null);

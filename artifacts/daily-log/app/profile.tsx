@@ -100,12 +100,17 @@ export default function ProfileScreen() {
         mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.8,
+        quality: 0.7,
+        base64: true,
       });
 
-      if (!result.canceled && result.assets && result.assets[0]?.uri) {
+      if (!result.canceled && result.assets && result.assets[0]) {
         setSaving(true);
-        await updateProfile({ avatarUrl: result.assets[0].uri });
+        const asset = result.assets[0];
+        const finalUri = asset.base64
+          ? `data:image/jpeg;base64,${asset.base64}`
+          : asset.uri;
+        await updateProfile({ avatarUrl: finalUri });
         setSaving(false);
         setAvatarModalOpen(false);
       }

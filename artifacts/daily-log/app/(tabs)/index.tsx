@@ -5,6 +5,7 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -28,6 +29,7 @@ import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollV
 import { displayDate, iso, parseIso, shiftDays } from '@/lib/date';
 import { useAuth } from '@/contexts/AuthContext';
 import {
+  addRoutineItem,
   fetchDailyLog,
   saveDailyEntry,
   toggleRoutineItemCompletion,
@@ -111,6 +113,26 @@ export default function TodayScreen() {
       setCompleted((cur) => ({ ...cur, [variables.id]: !variables.isDone }));
     },
   });
+
+  // Inline routine addition
+  const [isAddingRoutine, setIsAddingRoutine] = useState(false);
+  const [newRoutineName, setNewRoutineName] = useState('');
+
+  const addRoutineMutation = useMutation({
+    mutationFn: (name: string) => addRoutineItem(name, user?.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['daily-log'] });
+      queryClient.invalidateQueries({ queryKey: ['routine-items'] });
+      setNewRoutineName('');
+      setIsAddingRoutine(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    },
+  });
+
+  const handleAddRoutine = () => {
+    if (!newRoutineName.trim()) return;
+    addRoutineMutation.mutate(newRoutineName.trim());
+  };
 
   const save = () => {
     dirty.current = false;
@@ -326,22 +348,83 @@ export default function TodayScreen() {
           ))}
         </Card>
 
-        {/* 4. Routine Habits */}
+        {/* 4. Routine Habits with Inline Add Option */}
         <Card>
           <SectionTitle
             eyebrow="Your rhythm"
             title="Today’s routines"
             right={
-              <Text style={[ui.muted, { color: colors.primary, fontWeight: '700' }]}>
-                {completedCount}/{routines.length}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={[ui.muted, { color: colors.primary, fontWeight: '700' }]}>
+                  {completedCount}/{routines.length}
+                </Text>
+                <Pressable
+                  onPress={() => setIsAddingRoutine((prev) => !prev)}
+                  style={({ pressed }) => [
+                    local.addRoutineBadge,
+                    {
+                      backgroundColor: isAddingRoutine ? colors.primary : colors.secondary,
+                      borderColor: colors.border,
+                      opacity: pressed ? 0.75 : 1,
+                    },
+                  ]}
+                  accessibilityLabel="Add new routine"
+                >
+                  <Feather
+                    name={isAddingRoutine ? 'x' : 'plus'}
+                    size={13}
+                    color={isAddingRoutine ? colors.primaryForeground : colors.primary}
+                  />
+                  <Text
+                    style={[
+                      local.addRoutineBadgeText,
+                      { color: isAddingRoutine ? colors.primaryForeground : colors.primary },
+                    ]}
+                  >
+                    {isAddingRoutine ? 'Close' : 'Add'}
+                  </Text>
+                </Pressable>
+              </View>
             }
           />
+
+          {/* Inline Add Input Box */}
+          {isAddingRoutine && (
+            <View style={[local.inlineAddBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
+              <TextInput
+                value={newRoutineName}
+                onChangeText={setNewRoutineName}
+                placeholder="New routine name (e.g., Gym, Read 20 mins)…"
+                placeholderTextColor={colors.mutedForeground}
+                style={[local.inlineAddInput, { color: colors.foreground }]}
+                onSubmitEditing={handleAddRoutine}
+                returnKeyType="done"
+                autoFocus
+              />
+              <Pressable
+                onPress={handleAddRoutine}
+                disabled={!newRoutineName.trim() || addRoutineMutation.isPending}
+                style={({ pressed }) => [
+                  local.inlineAddBtn,
+                  {
+                    backgroundColor: colors.primary,
+                    opacity: !newRoutineName.trim() ? 0.45 : pressed ? 0.8 : 1,
+                  },
+                ]}
+              >
+                <Feather name="check" size={14} color={colors.primaryForeground} />
+                <Text style={[local.inlineAddBtnText, { color: colors.primaryForeground }]}>
+                  {addRoutineMutation.isPending ? 'Adding…' : 'Save'}
+                </Text>
+              </Pressable>
+            </View>
+          )}
+
           {routines.length === 0 ? (
             <View style={local.emptyRow}>
               <Feather name="sunrise" color={colors.primary} size={21} />
               <Text style={[ui.muted, { color: colors.mutedForeground }]}>
-                Add a few rituals in Settings.
+                No rituals yet. Tap Add above to create your first!
               </Text>
             </View>
           ) : (
@@ -354,6 +437,21 @@ export default function TodayScreen() {
                 colors={colors}
               />
             ))
+          )}
+
+          {!isAddingRoutine && (
+            <Pressable
+              onPress={() => setIsAddingRoutine(true)}
+              style={({ pressed }) => [
+                local.addRoutineRow,
+                { opacity: pressed ? 0.7 : 1 },
+              ]}
+            >
+              <Feather name="plus-circle" size={16} color={colors.primary} />
+              <Text style={[local.addRoutineRowText, { color: colors.primary }]}>
+                + Add a new routine habit
+              </Text>
+            </Pressable>
           )}
         </Card>
 
@@ -388,7 +486,15 @@ function RoutineRow({
   colors: ReturnType<typeof useColors>;
 }) {
   return (
-    <View style={local.routineRow}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        local.routineRow,
+        { opacity: pressed ? 0.75 : 1 },
+      ]}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: done }}
+    >
       <View
         style={[
           local.routineLine,
@@ -406,13 +512,18 @@ function RoutineRow({
       >
         {name}
       </Text>
-      <IconButton
-        icon={done ? 'check' : 'circle'}
-        label={`${done ? 'Uncheck' : 'Check'} ${name}`}
-        onPress={onPress}
-        tint={done ? colors.primary : colors.mutedForeground}
-      />
-    </View>
+      <View
+        style={[
+          local.habitCheckCircle,
+          {
+            backgroundColor: done ? colors.primary : 'transparent',
+            borderColor: done ? colors.primary : colors.border,
+          },
+        ]}
+      >
+        {done && <Feather name="check" size={13} color={colors.primaryForeground} />}
+      </View>
+    </Pressable>
   );
 }
 
@@ -521,5 +632,68 @@ const local = StyleSheet.create({
     fontFamily: 'Amazon Ember Display',
     fontSize: 12,
     fontWeight: '600',
+  },
+  addRoutineBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  addRoutineBadgeText: {
+    fontFamily: 'Amazon Ember Display',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  inlineAddBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 12,
+    gap: 8,
+  },
+  inlineAddInput: {
+    fontFamily: 'Amazon Ember Display',
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: 4,
+  },
+  inlineAddBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  inlineAddBtnText: {
+    fontFamily: 'Amazon Ember Display',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  addRoutineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    marginTop: 4,
+  },
+  addRoutineRowText: {
+    fontFamily: 'Amazon Ember Display',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  habitCheckCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

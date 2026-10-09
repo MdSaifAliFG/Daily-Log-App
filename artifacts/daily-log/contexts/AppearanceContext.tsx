@@ -4,9 +4,11 @@ import { Appearance, Platform } from 'react-native';
 
 export type AppearanceMode = 'system' | 'light' | 'dark';
 
-type AppearanceContextValue = {
+export type AppearanceContextValue = {
   mode: AppearanceMode;
   setMode: (mode: AppearanceMode) => void;
+  isDark: boolean;
+  toggleTheme: () => void;
 };
 
 const AppearanceContext = createContext<AppearanceContextValue | null>(null);
@@ -38,6 +40,12 @@ function applyTheme(mode: AppearanceMode) {
 
 export function AppearanceProvider({ children }: { children: React.ReactNode }) {
   const [mode, setModeState] = useState<AppearanceMode>('system');
+  const [systemIsDark, setSystemIsDark] = useState<boolean>(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return Appearance.getColorScheme() === 'dark';
+  });
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((value) => {
@@ -53,11 +61,17 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     if (Platform.OS === 'web' && typeof window !== 'undefined' && window.matchMedia) {
       const media = window.matchMedia('(prefers-color-scheme: dark)');
-      const listener = () => {
+      const listener = (e: MediaQueryListEvent) => {
+        setSystemIsDark(e.matches);
         if (mode === 'system') applyTheme('system');
       };
       media.addEventListener('change', listener);
       return () => media.removeEventListener('change', listener);
+    } else {
+      const sub = Appearance.addChangeListener(({ colorScheme }) => {
+        setSystemIsDark(colorScheme === 'dark');
+      });
+      return () => sub.remove();
     }
   }, [mode]);
 
@@ -67,8 +81,15 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
     void AsyncStorage.setItem(STORAGE_KEY, nextMode);
   };
 
+  const isDark = mode === 'dark' || (mode === 'system' && systemIsDark);
+
+  const toggleTheme = () => {
+    const next = isDark ? 'light' : 'dark';
+    setMode(next);
+  };
+
   return (
-    <AppearanceContext.Provider value={{ mode, setMode }}>
+    <AppearanceContext.Provider value={{ mode, setMode, isDark, toggleTheme }}>
       {children}
     </AppearanceContext.Provider>
   );

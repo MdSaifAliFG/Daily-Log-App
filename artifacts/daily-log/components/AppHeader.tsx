@@ -14,6 +14,7 @@ import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
+import { useAppearance } from '@/contexts/AppearanceContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { GlobalSearchResult, performGlobalSearch } from '@/lib/dataService';
 
@@ -27,6 +28,7 @@ const FILTER_TYPES = [
 
 export function AppHeader() {
   const colors = useColors();
+  const { isDark, toggleTheme } = useAppearance();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, profile } = useAuth();
@@ -197,6 +199,26 @@ export function AppHeader() {
             )}
           </Pressable>
 
+          {/* Quick Theme Toggle */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.themeToggleBtn,
+              {
+                backgroundColor: colors.secondary,
+                borderColor: colors.border,
+                opacity: pressed ? 0.75 : 1,
+              },
+            ]}
+            onPress={toggleTheme}
+            accessibilityLabel={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            <Feather
+              name={isDark ? 'sun' : 'moon'}
+              size={17}
+              color={colors.primary}
+            />
+          </Pressable>
+
           {/* 3. User Avatar / Profile link */}
           <Pressable
             style={({ pressed }) => [
@@ -210,8 +232,10 @@ export function AppHeader() {
             onPress={() => router.push('/profile')}
             accessibilityLabel="Open user profile"
           >
-            {profile?.avatarUrl ? (
+            {profile?.avatarUrl && !profile.avatarUrl.startsWith('preset:') ? (
               <Image source={{ uri: profile.avatarUrl }} style={styles.avatarImg} />
+            ) : profile?.avatarUrl?.startsWith('preset:') ? (
+              <Text style={{ fontSize: 16 }}>{profile.avatarUrl.split(':')[1] || '🌿'}</Text>
             ) : (
               <Text style={[styles.avatarInitial, { color: colors.primary }]}>
                 {profile?.fullName ? profile.fullName[0].toUpperCase() : 'U'}
@@ -466,6 +490,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Amazon Ember Display',
     fontSize: 10,
     fontWeight: '700',
+  },
+  themeToggleBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatarBtn: {
     width: 34,

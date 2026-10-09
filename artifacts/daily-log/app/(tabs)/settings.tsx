@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Alert,
+  Image,
   Platform,
   Pressable,
   ScrollView,
@@ -109,11 +110,19 @@ export default function SettingsScreen() {
         <Card style={local.profileCard}>
           <Text style={[ui.eyebrow, { color: colors.primary }]}>Your Profile</Text>
           <View style={local.profileRow}>
-            <View style={[local.avatar, { backgroundColor: colors.secondary }]}>
-              <Text style={[local.avatarText, { color: colors.primary }]}>
-                {(profile?.fullName || 'U')[0].toUpperCase()}
-              </Text>
-            </View>
+            {profile?.avatarUrl && !profile.avatarUrl.startsWith('preset:') ? (
+              <Image source={{ uri: profile.avatarUrl }} style={[local.avatar, { width: 44, height: 44, borderRadius: 22 }]} />
+            ) : profile?.avatarUrl?.startsWith('preset:') ? (
+              <View style={[local.avatar, { backgroundColor: profile.avatarUrl.split(':')[2] || colors.secondary }]}>
+                <Text style={{ fontSize: 20 }}>{profile.avatarUrl.split(':')[1] || '🌿'}</Text>
+              </View>
+            ) : (
+              <View style={[local.avatar, { backgroundColor: colors.secondary }]}>
+                <Text style={[local.avatarText, { color: colors.primary }]}>
+                  {(profile?.fullName || 'U')[0].toUpperCase()}
+                </Text>
+              </View>
+            )}
             <View style={ui.flex}>
               <Text style={[local.userName, { color: colors.foreground }]}>
                 {profile?.fullName || 'Journaler'}

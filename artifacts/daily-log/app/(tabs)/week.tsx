@@ -4,6 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
+import { useAppearance } from '@/contexts/AppearanceContext';
 import {
   Button,
   Card,
@@ -25,6 +26,7 @@ import {
 
 export default function WeekScreen() {
   const colors = useColors();
+  const { isDark, toggleTheme } = useAppearance();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -91,7 +93,20 @@ export default function WeekScreen() {
         <SectionTitle
           eyebrow="A wider view"
           title="This week"
-          right={<Feather name="sun" color={colors.primary} size={22} />}
+          right={
+            <Pressable
+              onPress={toggleTheme}
+              accessibilityLabel={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              style={({ pressed }) => ({
+                padding: 7,
+                borderRadius: 18,
+                backgroundColor: colors.secondary,
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <Feather name={isDark ? 'sun' : 'moon'} color={colors.primary} size={20} />
+            </Pressable>
+          }
         />
 
         {/* Week navigation */}

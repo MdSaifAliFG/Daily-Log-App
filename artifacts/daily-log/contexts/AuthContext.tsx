@@ -20,6 +20,8 @@ interface StoredAccount {
   fullName: string;
   password: string;
   createdAt: string;
+  avatarUrl?: string;
+  bio?: string;
 }
 
 interface AuthContextValue {
@@ -272,6 +274,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user_metadata: {
           full_name: account.fullName,
           phone_number: account.formattedPhone,
+          avatar_url: account.avatarUrl || '',
+          bio: account.bio || '',
         },
       } as unknown as User;
 
@@ -281,6 +285,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: `${phone10}@phone.local`,
         phoneNumber: account.formattedPhone,
         fullName: account.fullName,
+        avatarUrl: account.avatarUrl,
+        bio: account.bio,
         createdAt: account.createdAt,
       });
 
@@ -436,6 +442,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const phone10 = profile.phoneNumber?.replace(/\D/g, '').slice(-10);
       if (phone10 && accounts[phone10]) {
         accounts[phone10].fullName = nextFullName;
+        accounts[phone10].avatarUrl = nextAvatar;
+        accounts[phone10].bio = nextBio;
         await AsyncStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify(accounts));
         await AsyncStorage.setItem(
           LOCAL_CURRENT_USER_KEY,
