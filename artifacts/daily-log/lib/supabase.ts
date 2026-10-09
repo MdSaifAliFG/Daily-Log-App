@@ -22,6 +22,44 @@ export function isSupabaseConfigured(): boolean {
   );
 }
 
+/**
+ * Ensures any identifier (phone number, custom user id, or legacy id)
+ * is represented as a valid RFC 4122 v4 UUID string suitable for PostgreSQL.
+ */
+export function toValidUuid(input: string | null | undefined): string {
+  if (!input) return '00000000-0000-0000-0000-000000000000';
+  const trimmed = String(input).trim();
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (uuidRegex.test(trimmed)) {
+    return trimmed.toLowerCase();
+  }
+
+  // If this was a legacy usr_<phone>_<timestamp> format or phone number, normalize to the 10-digit phone seed
+  let seed = trimmed;
+  const legacyPhoneMatch = trimmed.match(/^usr_(\d{10})/);
+  if (legacyPhoneMatch) {
+    seed = legacyPhoneMatch[1];
+  } else {
+    const rawDigits = trimmed.replace(/\D/g, '');
+    if (rawDigits.length >= 10 && (trimmed.startsWith('+') || /^\d+$/.test(trimmed))) {
+      seed = rawDigits.slice(-10);
+    }
+  }
+
+  // Derive deterministic 128-bit RFC 4122 v4 UUID from seed string
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57, h3 = 0x61c88647, h4 = 0x9e3779b9;
+  for (let i = 0; i < seed.length; i++) {
+    const ch = seed.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+    h3 = Math.imul(h3 ^ ch, 3812015801);
+    h4 = Math.imul(h4 ^ ch, 2246822507);
+  }
+  const toHex = (n: number) => (n >>> 0).toString(16).padStart(8, '0');
+  const hex = toHex(h1) + toHex(h2) + toHex(h3) + toHex(h4);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`.toLowerCase();
+}
+
 export function getSupabase(): SupabaseClient {
   if (!clientInstance) {
     const validUrl = isSupabaseConfigured() ? cachedUrl : 'https://placeholder.supabase.co';

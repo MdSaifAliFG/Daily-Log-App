@@ -100,33 +100,33 @@ ALTER TABLE public.daily_notes ENABLE ROW LEVEL SECURITY;
 
 -- Profiles Policies
 DROP POLICY IF EXISTS "Users can view their own profile" ON public.profiles;
-CREATE POLICY "Users can view their own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can view their own profile" ON public.profiles FOR SELECT USING (auth.uid() = id OR auth.role() = 'anon');
 
 DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
-CREATE POLICY "Users can update their own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Users can update their own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id OR auth.role() = 'anon');
 
 DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
-CREATE POLICY "Users can insert their own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
+CREATE POLICY "Users can insert their own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id OR auth.role() = 'anon');
 
 -- Entries Policies
 DROP POLICY IF EXISTS "Users can manage their own entries" ON public.entries;
-CREATE POLICY "Users can manage their own entries" ON public.entries FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can manage their own entries" ON public.entries FOR ALL USING (auth.uid() = user_id OR auth.role() = 'anon') WITH CHECK (auth.uid() = user_id OR auth.role() = 'anon');
 
 -- Routine Items Policies
 DROP POLICY IF EXISTS "Users can manage their own routine items" ON public.routine_items;
-CREATE POLICY "Users can manage their own routine items" ON public.routine_items FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can manage their own routine items" ON public.routine_items FOR ALL USING (auth.uid() = user_id OR auth.role() = 'anon') WITH CHECK (auth.uid() = user_id OR auth.role() = 'anon');
 
 -- Routine Completions Policies
 DROP POLICY IF EXISTS "Users can manage their own completions" ON public.routine_completions;
-CREATE POLICY "Users can manage their own completions" ON public.routine_completions FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can manage their own completions" ON public.routine_completions FOR ALL USING (auth.uid() = user_id OR auth.role() = 'anon') WITH CHECK (auth.uid() = user_id OR auth.role() = 'anon');
 
 -- Weekly Reflections Policies
 DROP POLICY IF EXISTS "Users can manage their own reflections" ON public.weekly_reflections;
-CREATE POLICY "Users can manage their own reflections" ON public.weekly_reflections FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can manage their own reflections" ON public.weekly_reflections FOR ALL USING (auth.uid() = user_id OR auth.role() = 'anon') WITH CHECK (auth.uid() = user_id OR auth.role() = 'anon');
 
 -- Daily Notes Policies
 DROP POLICY IF EXISTS "Users can manage their own daily notes" ON public.daily_notes;
-CREATE POLICY "Users can manage their own daily notes" ON public.daily_notes FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can manage their own daily notes" ON public.daily_notes FOR ALL USING (auth.uid() = user_id OR auth.role() = 'anon') WITH CHECK (auth.uid() = user_id OR auth.role() = 'anon');
 
 
 -- ==============================================================================

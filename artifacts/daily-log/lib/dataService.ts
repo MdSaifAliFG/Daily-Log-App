@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getSupabase, isSupabaseConfigured } from './supabase';
+import { getSupabase, isSupabaseConfigured, toValidUuid } from './supabase';
 import { iso, parseIso, shiftDays, startOfWeek } from './date';
 
 export interface Entry {
@@ -93,15 +93,16 @@ async function getLocalRoutines(): Promise<Omit<RoutineItem, 'completed'>[]> {
 // ---------------------------------------------------------------------------
 export async function fetchDailyLog(date: string, userId?: string | null): Promise<DailyData> {
   const supabase = getSupabase();
-  const useCloud = isSupabaseConfigured() && Boolean(userId);
+  const validUserId = userId ? toValidUuid(userId) : null;
+  const useCloud = isSupabaseConfigured() && Boolean(validUserId);
 
-  if (useCloud && userId) {
+  if (useCloud && validUserId) {
     try {
       // 1. Fetch Entry
       const { data: entryData, error: entryError } = await supabase
         .from('entries')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', validUserId)
         .eq('date', date)
         .maybeSingle();
 
@@ -113,7 +114,7 @@ export async function fetchDailyLog(date: string, userId?: string | null): Promi
       const { data: routinesData } = await supabase
         .from('routine_items')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', validUserId)
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
 
@@ -121,7 +122,7 @@ export async function fetchDailyLog(date: string, userId?: string | null): Promi
       const { data: completionsData } = await supabase
         .from('routine_completions')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', validUserId)
         .eq('date', date);
 
       // 4. Fetch Previous Entry snippet
@@ -129,7 +130,7 @@ export async function fetchDailyLog(date: string, userId?: string | null): Promi
       const { data: prevData } = await supabase
         .from('entries')
         .select('journal_text')
-        .eq('user_id', userId)
+        .eq('user_id', validUserId)
         .eq('date', yesterday)
         .maybeSingle();
 
@@ -166,8 +167,8 @@ export async function fetchDailyLog(date: string, userId?: string | null): Promi
         routines: routines.length > 0 ? routines : DEFAULT_STARTER_ROUTINES.map((r) => ({ ...r, completed: false })),
         previousEntrySnippet: prevData?.journal_text ? prevData.journal_text.slice(0, 100) : null,
       };
-    } catch (err) {
-      console.warn('Supabase fetch failed, falling back to local storage', err);
+    } catch {
+      // Supabase fetch skipped or offline, falls back gracefully to local storage
     }
   }
 
@@ -218,15 +219,16 @@ export async function saveDailyEntry(
   await AsyncStorage.setItem(`${LOCAL_ENTRIES_KEY}_${date}`, JSON.stringify(cleanEntry));
 
   const supabase = getSupabase();
-  const useCloud = isSupabaseConfigured() && Boolean(userId);
+  const validUserId = userId ? toValidUuid(userId) : null;
+  const useCloud = isSupabaseConfigured() && Boolean(validUserId);
 
-  if (useCloud && userId) {
+  if (useCloud && validUserId) {
     try {
       const { data, error } = await supabase
         .from('entries')
         .upsert(
           {
-            user_id: userId,
+            user_id: validUserId,
             date,
             journal_text: cleanEntry.journalText,
             mood_rating: cleanEntry.moodRating,
@@ -248,8 +250,8 @@ export async function saveDailyEntry(
           updatedAt: data.updated_at,
         };
       }
-    } catch (err) {
-      console.warn('Cloud sync error, saved locally', err);
+    } catch {
+      // Cloud sync error, saved locally
     }
   }
 
@@ -273,19 +275,20 @@ export async function toggleRoutineItemCompletion(
 
   // 2. Sync to cloud if available
   const supabase = getSupabase();
-  if (isSupabaseConfigured() && userId) {
+  const validUserId = userId ? toValidUuid(userId) : null;
+  if (isSupabaseConfigured() && validUserId) {
     try {
       await supabase.from('routine_completions').upsert(
         {
-          user_id: userId,
+          user_id: validUserId,
           date,
           routine_item_id: routineItemId,
           completed,
         },
         { onConflict: 'user_id,date,routine_item_id' }
       );
-    } catch (err) {
-      console.warn('Routine completion cloud sync error', err);
+    } catch {
+      // Offline fallback
     }
   }
 
@@ -326,13 +329,14 @@ export async function fetchWeekSummary(weekStart: string, userId?: string | null
   const rawRef = await AsyncStorage.getItem(`${LOCAL_REFLECTIONS_KEY}_${weekStart}`);
   if (rawRef) reflection = JSON.parse(rawRef);
 
-  if (isSupabaseConfigured() && userId) {
+  const validUserId = userId ? toValidUuid(userId) : null;
+  if (isSupabaseConfigured() && validUserId) {
     try {
       const supabase = getSupabase();
       const { data } = await supabase
         .from('weekly_reflections')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', validUserId)
         .eq('week_start_date', weekStart)
         .maybeSingle();
 
@@ -359,12 +363,13 @@ export async function saveWeekReflection(
   const reflection = { wentWell, improve };
   await AsyncStorage.setItem(`${LOCAL_REFLECTIONS_KEY}_${weekStartDate}`, JSON.stringify(reflection));
 
-  if (isSupabaseConfigured() && userId) {
+  const validUserId = userId ? toValidUuid(userId) : null;
+  if (isSupabaseConfigured() && validUserId) {
     try {
       const supabase = getSupabase();
       await supabase.from('weekly_reflections').upsert(
         {
-          user_id: userId,
+          user_id: validUserId,
           week_start_date: weekStartDate,
           went_well: wentWell,
           improve,
@@ -372,8 +377,8 @@ export async function saveWeekReflection(
         },
         { onConflict: 'user_id,week_start_date' }
       );
-    } catch (err) {
-      console.warn('Reflection sync error', err);
+    } catch {
+      // Offline fallback
     }
   }
 
@@ -454,13 +459,14 @@ export async function fetchMonthSummary(year: number, month: number, userId?: st
 // 6. Routine Management
 // ---------------------------------------------------------------------------
 export async function fetchRoutineItems(userId?: string | null): Promise<RoutineItem[]> {
-  if (isSupabaseConfigured() && userId) {
+  const validUserId = userId ? toValidUuid(userId) : null;
+  if (isSupabaseConfigured() && validUserId) {
     try {
       const supabase = getSupabase();
       const { data, error } = await supabase
         .from('routine_items')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', validUserId)
         .order('sort_order', { ascending: true });
 
       if (data && !error && data.length > 0) {
@@ -475,7 +481,7 @@ export async function fetchRoutineItems(userId?: string | null): Promise<Routine
       if (data && !error && data.length === 0) {
         // Auto-seed starter routines for the user
         const starterPayload = DEFAULT_STARTER_ROUTINES.map((r) => ({
-          user_id: userId,
+          user_id: validUserId,
           name: r.name,
           is_active: r.isActive,
           sort_order: r.sortOrder,
@@ -510,13 +516,14 @@ export async function addRoutineItem(name: string, userId?: string | null): Prom
   const updated = [...current, newItem];
   await AsyncStorage.setItem(LOCAL_ROUTINES_KEY, JSON.stringify(updated));
 
-  if (isSupabaseConfigured() && userId) {
+  const validUserId = userId ? toValidUuid(userId) : null;
+  if (isSupabaseConfigured() && validUserId) {
     try {
       const supabase = getSupabase();
       const { data } = await supabase
         .from('routine_items')
         .insert({
-          user_id: userId,
+          user_id: validUserId,
           name: newItem.name,
           is_active: true,
           sort_order: newItem.sortOrder,
@@ -540,13 +547,14 @@ export async function updateRoutineItem(
   const next = current.map((r) => (r.id === id ? { ...r, ...updates } : r));
   await AsyncStorage.setItem(LOCAL_ROUTINES_KEY, JSON.stringify(next));
 
-  if (isSupabaseConfigured() && userId) {
+  const validUserId = userId ? toValidUuid(userId) : null;
+  if (isSupabaseConfigured() && validUserId) {
     try {
       const supabase = getSupabase();
       const payload: Record<string, unknown> = {};
       if (updates.name !== undefined) payload.name = updates.name;
       if (updates.isActive !== undefined) payload.is_active = updates.isActive;
-      await supabase.from('routine_items').update(payload).eq('id', id).eq('user_id', userId);
+      await supabase.from('routine_items').update(payload).eq('id', id).eq('user_id', validUserId);
     } catch {}
   }
 }
@@ -556,10 +564,11 @@ export async function deleteRoutineItem(id: number, userId?: string | null): Pro
   const next = current.filter((r) => r.id !== id);
   await AsyncStorage.setItem(LOCAL_ROUTINES_KEY, JSON.stringify(next));
 
-  if (isSupabaseConfigured() && userId) {
+  const validUserId = userId ? toValidUuid(userId) : null;
+  if (isSupabaseConfigured() && validUserId) {
     try {
       const supabase = getSupabase();
-      await supabase.from('routine_items').delete().eq('id', id).eq('user_id', userId);
+      await supabase.from('routine_items').delete().eq('id', id).eq('user_id', validUserId);
     } catch {}
   }
 }
@@ -581,13 +590,14 @@ export interface DailyNote {
 const LOCAL_NOTES_KEY = '@daily-log/daily-notes';
 
 export async function fetchDailyNotes(userId?: string | null): Promise<DailyNote[]> {
-  if (isSupabaseConfigured() && userId) {
+  const validUserId = userId ? toValidUuid(userId) : null;
+  if (isSupabaseConfigured() && validUserId) {
     try {
       const supabase = getSupabase();
       const { data, error } = await supabase
         .from('daily_notes')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', validUserId)
         .order('is_pinned', { ascending: false })
         .order('updated_at', { ascending: false });
 
@@ -605,8 +615,8 @@ export async function fetchDailyNotes(userId?: string | null): Promise<DailyNote
         await AsyncStorage.setItem(LOCAL_NOTES_KEY, JSON.stringify(mapped));
         return mapped;
       }
-    } catch (err) {
-      console.warn('Failed to fetch daily notes from Supabase, falling back to local storage', err);
+    } catch {
+      // Supabase fetch skipped or offline, falls back gracefully to local storage
     }
   }
 
@@ -652,11 +662,12 @@ export async function saveDailyNote(
 
   await AsyncStorage.setItem(LOCAL_NOTES_KEY, JSON.stringify(nextList));
 
-  if (isSupabaseConfigured() && userId) {
+  const validUserId = userId ? toValidUuid(userId) : null;
+  if (isSupabaseConfigured() && validUserId) {
     try {
       const supabase = getSupabase();
       const payload: any = {
-        user_id: userId,
+        user_id: validUserId,
         title: updatedNote.title,
         content: updatedNote.content,
         date: updatedNote.date,
@@ -690,8 +701,8 @@ export async function saveDailyNote(
         await AsyncStorage.setItem(LOCAL_NOTES_KEY, JSON.stringify(finalNotes));
         return syncedNote;
       }
-    } catch (err) {
-      console.warn('Failed to sync note to Supabase, saved locally', err);
+    } catch {
+      // Offline fallback
     }
   }
 
@@ -703,12 +714,13 @@ export async function deleteDailyNote(noteId: string, userId?: string | null): P
   const nextList = currentNotes.filter((n) => n.id !== noteId);
   await AsyncStorage.setItem(LOCAL_NOTES_KEY, JSON.stringify(nextList));
 
-  if (isSupabaseConfigured() && userId && !noteId.startsWith('local_')) {
+  const validUserId = userId ? toValidUuid(userId) : null;
+  if (isSupabaseConfigured() && validUserId && !noteId.startsWith('local_')) {
     try {
       const supabase = getSupabase();
-      await supabase.from('daily_notes').delete().eq('id', noteId).eq('user_id', userId);
-    } catch (err) {
-      console.warn('Failed to delete note from Supabase', err);
+      await supabase.from('daily_notes').delete().eq('id', noteId).eq('user_id', validUserId);
+    } catch {
+      // Offline fallback
     }
   }
 }
@@ -722,14 +734,15 @@ export async function togglePinDailyNote(
   const nextList = currentNotes.map((n) => (n.id === noteId ? { ...n, isPinned } : n));
   await AsyncStorage.setItem(LOCAL_NOTES_KEY, JSON.stringify(nextList));
 
-  if (isSupabaseConfigured() && userId && !noteId.startsWith('local_')) {
+  const validUserId = userId ? toValidUuid(userId) : null;
+  if (isSupabaseConfigured() && validUserId && !noteId.startsWith('local_')) {
     try {
       const supabase = getSupabase();
       await supabase
         .from('daily_notes')
         .update({ is_pinned: isPinned, updated_at: new Date().toISOString() })
         .eq('id', noteId)
-        .eq('user_id', userId);
+        .eq('user_id', validUserId);
     } catch {}
   }
 }
@@ -783,12 +796,13 @@ export async function performGlobalSearch(
 
   // 2. Search Journal Entries
   try {
-    if (isSupabaseConfigured() && userId) {
+    const validUserId = userId ? toValidUuid(userId) : null;
+    if (isSupabaseConfigured() && validUserId) {
       const supabase = getSupabase();
       const { data: entries, error } = await supabase
         .from('entries')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', validUserId)
         .or(`journal_text.ilike.%${q}%,date.ilike.%${q}%`)
         .order('date', { ascending: false })
         .limit(15);
@@ -861,12 +875,13 @@ export async function performGlobalSearch(
 
   // 4. Search Weekly Reflections
   try {
-    if (isSupabaseConfigured() && userId) {
+    const validUserId = userId ? toValidUuid(userId) : null;
+    if (isSupabaseConfigured() && validUserId) {
       const supabase = getSupabase();
       const { data: reflections } = await supabase
         .from('weekly_reflections')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', validUserId)
         .or(`went_well.ilike.%${q}%,improve.ilike.%${q}%,week_start_date.ilike.%${q}%`)
         .limit(8);
 

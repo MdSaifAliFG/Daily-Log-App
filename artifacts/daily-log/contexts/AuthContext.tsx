@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, Session } from '@supabase/supabase-js';
-import { getSupabase, isSupabaseConfigured, loadStoredSupabaseConfig } from '@/lib/supabase';
+import { getSupabase, isSupabaseConfigured, loadStoredSupabaseConfig, toValidUuid } from '@/lib/supabase';
 
 export interface UserProfile {
   id: string;
@@ -79,8 +79,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const rawUser = await AsyncStorage.getItem(LOCAL_CURRENT_USER_KEY);
       if (rawUser) {
         const stored = JSON.parse(rawUser) as StoredAccount;
+        const validId = toValidUuid(stored.id || stored.phone10);
+        if (stored.id !== validId) {
+          stored.id = validId;
+          await AsyncStorage.setItem(LOCAL_CURRENT_USER_KEY, JSON.stringify(stored));
+          try {
+            const accounts = await getStoredAccounts();
+            if (accounts[stored.phone10]) {
+              accounts[stored.phone10].id = validId;
+              await AsyncStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify(accounts));
+            }
+          } catch {}
+        }
+
         const fakeUser = {
-          id: stored.id,
+          id: validId,
           email: `${stored.phone10}@phone.local`,
           created_at: stored.createdAt,
           user_metadata: {
@@ -91,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         setUser(fakeUser);
         setProfile({
-          id: stored.id,
+          id: validId,
           email: `${stored.phone10}@phone.local`,
           phoneNumber: stored.formattedPhone,
           fullName: stored.fullName,
@@ -118,11 +131,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserProfile = async (currentUser: User) => {
     try {
+      const validUid = toValidUuid(currentUser.id);
       const supabase = getSupabase();
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', currentUser.id)
+        .eq('id', validUid)
         .maybeSingle();
 
       const phoneMeta = currentUser.user_metadata?.phone_number || '';
@@ -142,7 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       } else {
         const newProfile = {
-          id: currentUser.id,
+          id: validUid,
           email: currentUser.email ?? '',
           full_name: fallbackName,
           phone_number: phoneMeta,
@@ -150,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await supabase.from('profiles').upsert(newProfile, { onConflict: 'id' });
 
         setProfile({
-          id: currentUser.id,
+          id: validUid,
           email: currentUser.email ?? '',
           phoneNumber: phoneMeta,
           fullName: fallbackName,
@@ -159,7 +173,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {
       setProfile({
-        id: currentUser.id,
+        id: toValidUuid(currentUser.id),
         email: currentUser.email ?? '',
         phoneNumber: currentUser.user_metadata?.phone_number || '',
         fullName: currentUser.user_metadata?.full_name ?? 'Journaler',
@@ -243,9 +257,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: 'Incorrect password. Please try again.' };
       }
 
+      const validId = toValidUuid(account.id || phone10);
+      if (account.id !== validId) {
+        account.id = validId;
+        accounts[phone10].id = validId;
+        await AsyncStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify(accounts));
+      }
+
       // Successful local sign in
       const fakeUser = {
-        id: account.id,
+        id: validId,
         email: `${phone10}@phone.local`,
         created_at: account.createdAt,
         user_metadata: {
@@ -256,7 +277,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUser(fakeUser);
       setProfile({
-        id: account.id,
+        id: validId,
         email: `${phone10}@phone.local`,
         phoneNumber: account.formattedPhone,
         fullName: account.fullName,
@@ -300,7 +321,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: 'An account with this phone number already exists. Please sign in.' };
       }
 
-      const userId = `usr_${phone10}_${Date.now()}`;
+      const userId = toValidUuid(phone10);
       let assignedId = userId;
 
       // 1. Register with Supabase if configured
@@ -391,9 +412,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (isSupabaseConfigured() && user) {
         try {
           const supabase = getSupabase();
+          const validUid = toValidUuid(user.id);
           await supabase.from('profiles').upsert(
             {
-              id: user.id,
+              id: validUid,
               full_name: nextFullName,
               avatar_url: nextAvatar || '',
             },
@@ -468,11 +490,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           try {
             await supabase.rpc('delete_user_account');
           } catch {
-            await supabase.from('entries').delete().eq('user_id', user.id);
-            await supabase.from('daily_notes').delete().eq('user_id', user.id);
-            await supabase.from('routine_completions').delete().eq('user_id', user.id);
-            await supabase.from('routine_items').delete().eq('user_id', user.id);
-            await supabase.from('profiles').delete().eq('id', user.id);
+            const validUid = toValidUuid(user.id);
+            await supabase.from('entries').delete().eq('user_id', validUid);
+            await supabase.from('daily_notes').delete().eq('user_id', validUid);
+            await supabase.from('routine_completions').delete().eq('user_id', validUid);
+            await supabase.from('routine_items').delete().eq('user_id', validUid);
+            await supabase.from('profiles').delete().eq('id', validUid);
           }
           await supabase.auth.signOut();
         } catch {}
